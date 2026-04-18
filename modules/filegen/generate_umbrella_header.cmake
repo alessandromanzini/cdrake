@@ -1,4 +1,4 @@
-include(ms_timestamp)
+include( "${CDRAKE_MODULES_DIR}/shell/ms_timestamp.cmake" )
 
 function( cdrk_generate_umbrella_header )
     #
@@ -13,11 +13,15 @@ function( cdrk_generate_umbrella_header )
     #
     get_filename_component( EXTENSION ${ARG_UMBRELLA_HEADER_NAME} EXT )
     if( NOT ${EXTENSION} STREQUAL "" )
+        #
         message( FATAL_ERROR "generate_umbrella_header: UMBRELLA_HEADER_NAME must not contain an extension (${ARG_UMBRELLA_HEADER_NAME})!" )
+        #
     endif()
     #
     if( NOT IS_ABSOLUTE ${ARG_INCLUDE_DIRECTORY} )
+        #
         message( FATAL_ERROR "generate_umbrella_header: INCLUDE_DIRECTORY must be an absolute path (${ARG_INCLUDE_DIRECTORY})!" )
+        #
     endif()
     #
     #
@@ -38,14 +42,18 @@ function( cdrk_generate_umbrella_header )
     file( GLOB_RECURSE INCLUDE_FILE_PATHS "${ARG_INCLUDE_DIRECTORY}/*.hpp" )
     list( FILTER INCLUDE_FILE_PATHS EXCLUDE REGEX ".*${UMBRELLA_HEADER_FILE}$" )
     foreach( REGEX ${ARG_EXCEPTION_REGEX} )
+        #
         list( FILTER INCLUDE_FILE_PATHS EXCLUDE REGEX "${REGEX}" )
+        #
     endforeach()
     list( SORT INCLUDE_FILE_PATHS COMPARE NATURAL ORDER ASCENDING )
     #
     # Define appen_header macro.
     macro( append_header PATH )
+        #
         file( RELATIVE_PATH REL_PATH ${ARG_INCLUDE_DIRECTORY} ${PATH} )
         string( APPEND CONTENT "#include \"${REL_PATH}\"\n" )
+        #
     endmacro()
     #
     # Extract pch and ...
@@ -55,15 +63,19 @@ function( cdrk_generate_umbrella_header )
     # ... if any was found, exclude from list and append in front.
     list( LENGTH PCH_FILE_PATHS PCH_COUNT )
     if( PCH_COUNT GREATER 0 )
+        #
         list( FILTER INCLUDE_FILE_PATHS EXCLUDE REGEX ".*/pch\\.hpp$" )
         list( GET PCH_FILE_PATHS 0 PCH_FILE_PATH )
         append_header( ${PCH_FILE_PATH} )
         string( APPEND CONTENT "\n" )
+        #
     endif()
     #
     # Append remaining headers.
     foreach( INCLUDE_FILE_PATH ${INCLUDE_FILE_PATHS} )
+        #
         append_header( ${INCLUDE_FILE_PATH} )
+        #
     endforeach()
     #
     string( APPEND CONTENT "\n\n#endif //!${HEADER_GUARD}\n" )
