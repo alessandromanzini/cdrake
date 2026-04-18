@@ -1,6 +1,7 @@
 function( cdrk_target_compile_options_strict TARGET_NAME )
     #
     if( MSVC )
+        #
         target_compile_options(
                 ${TARGET_NAME} PRIVATE
                 /W4                     # high warning level
@@ -39,6 +40,7 @@ function( cdrk_target_compile_options_strict TARGET_NAME )
         target_compile_definitions( ${TARGET_NAME} PRIVATE _HAS_EXCEPTIONS=0 )
         #
     else() # GCC / Clang
+        #
         target_compile_options(
                 ${TARGET_NAME} PRIVATE
                 -Wall                   # common useful warnings
@@ -59,6 +61,7 @@ function( cdrk_target_compile_options_strict TARGET_NAME )
                 -fno-exceptions         # disable exceptions
                 -fno-rtti               # disable RTTI
         )
+        #
     endif()
     #
     message( STATUS "${TARGET_NAME}: strict compilation options applied." )
