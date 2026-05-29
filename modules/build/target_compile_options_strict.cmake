@@ -1,4 +1,4 @@
-function( cdrk_target_compile_options_strict TARGET_NAME )
+function( cdrk_target_compile_options_strict TARGET_NAME EXTRA_ARGS )
     #
     if( MSVC )
         #
@@ -34,6 +34,7 @@ function( cdrk_target_compile_options_strict TARGET_NAME )
                 /Zc:__cplusplus         # report correct __cplusplus value
                 /Zc:inline              # remove unreferenced functions
                 /Zc:preprocessor        # conforming preprocessor
+                ${EXTRA_ARGS}
         )
         #
         # Disable exceptions engine-wide.
@@ -60,6 +61,7 @@ function( cdrk_target_compile_options_strict TARGET_NAME )
                 -Wno-unknown-pragmas    # ignore MSVC pragmas in shared headers
                 -fno-exceptions         # disable exceptions
                 -fno-rtti               # disable RTTI
+                ${EXTRA_ARGS}
         )
         #
     endif()
