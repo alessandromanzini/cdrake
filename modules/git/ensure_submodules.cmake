@@ -24,7 +24,7 @@ function( cdrk_ensure_submodules )
         cdrk_ms_timestamp( T_START_MS )
         #
         execute_process(
-                COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive --jobs 1
+                COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 RESULT_VARIABLE GIT_RESULT )
         #
