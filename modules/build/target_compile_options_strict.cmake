@@ -1,70 +1,31 @@
 function( cdrk_target_compile_options_strict TARGET_NAME )
     #
-    if( MSVC )
-        #
-        target_compile_options(
-                ${TARGET_NAME} PRIVATE
-                /W4                     # high warning level
-                /WX                     # warnings as errors
-                /permissive-            # strict conformance mode
-                /w14062                 # enumerator not handled in switch
-                /w14165                 # 'HRESULT' cast to 'bool'
-                /w14242                 # possible loss of data (int -> char etc)
-                /w14254                 # larger bit field assigned to smaller
-                /w14263                 # member function doesn't override base
-                /w14265                 # class has virtual functions but no virtual destructor
-                /w14287                 # unsigned/negative constant mismatch
-                /w14296                 # expression always false/true
-                /w14311                 # pointer truncation
-                /w14545                 # expression before comma has no effect
-                /w14546                 # function call before comma has no effect
-                /w14547                 # operator before comma has no effect
-                /w14549                 # operator before comma has no effect
-                /w14555                 # expression has no effect
-                /w14619                 # pragma warning: no warning number
-                /w14640                 # thread unsafe static member init
-                /w14826                 # conversion is sign-extended
-                /w14905                 # wide string literal cast to LPSTR
-                /w14906                 # string literal cast to LPWSTR
-                /w14928                 # illegal copy-initialization
-                /EHs-                   # disable standard C++ exception handling (s-)
-                /EHc-                   # disable extern "C" exceptions (c-)
-                /GR-                    # disable RTTI
-                /fp:precise             # safe floating point
-                /Zc:__cplusplus         # report correct __cplusplus value
-                /Zc:inline              # remove unreferenced functions
-                /Zc:preprocessor        # conforming preprocessor
-                ${ARGN}
-        )
-        #
-        # Disable exceptions engine-wide.
-        target_compile_definitions( ${TARGET_NAME} PRIVATE _HAS_EXCEPTIONS=0 )
-        #
-    else() # GCC / Clang
-        #
-        target_compile_options(
-                ${TARGET_NAME} PRIVATE
-                -Wall                   # common useful warnings
-                -Wextra                 # extra warning for sloppy/weird code
-                -Wpedantic              # warnings for non-standard compliant code
-                -Werror                 # treat warnings as errors
-                -Wshadow                # variable shadows outer scope
-                -Wnon-virtual-dtor      # base class with virtual funcs but no virtual dtor
-                -Wold-style-cast        # C-style casts
-                -Wcast-align            # potential performance cast
-                -Wunused                # anything unused
-                -Woverloaded-virtual    # overloaded (not overridden) virtual
-                -Wconversion            # implicit conversions that may lose data
-                -Wsign-conversion       # signed/unsigned conversion
-                -Wdouble-promotion      # float implicitly promoted to double
-                -Wformat=2              # printf/scanf format string issues
-                -Wno-unknown-pragmas    # ignore MSVC pragmas in shared headers
-                -fno-exceptions         # disable exceptions
-                -fno-rtti               # disable RTTI
-                ${ARGN}
-        )
-        #
-    endif()
+    # --- Diagnostics flags --------------------------------------------
+    # PRIVATE: these only affect how *this* target is compiled, not its
+    # externally visible configuration, so they must not propagate to
+    # consumers. Both toolchain branches live in one call, gated per-flag
+    # by COMPILE_LANG_AND_ID so mixed-language targets (e.g. ObjC++ sources
+    # in the same TARGET_NAME) are never touched by C++-only warnings.
+    #
+    target_compile_options(
+            ${TARGET_NAME} PRIVATE
+            "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/W4;/WX;/permissive-;/w14062;/w14165;/w14242;/w14254;/w14263;/w14265;/w14287;/w14296;/w14311;/w14545;/w14546;/w14547;/w14549;/w14555;/w14619;/w14640;/w14826;/w14905;/w14906;/w14928;/fp:precise;/Zc:__cplusplus;/Zc:inline;/Zc:preprocessor>"
+            "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-Wall;-Wextra;-Wpedantic;-Werror;-Wshadow;-Wnon-virtual-dtor;-Wold-style-cast;-Wcast-align;-Wunused;-Woverloaded-virtual;-Wconversion;-Wsign-conversion;-Wdouble-promotion;-Wformat=2;-Wno-unknown-pragmas>"
+            ${ARGN} )
+    #
+    # --- ABI-affecting flags ------------------------------------------
+    # PUBLIC, CXX-only: exception/RTTI configuration is baked into any
+    # exported C++20 module BMI. If a consumer target links this one but
+    # was compiled with a different setting, clang/MSVC rejects the .pcm
+    # with a "configuration mismatch" — so this must be a usage requirement,
+    # not a private detail. Scoping to CXX keeps it off ObjC++/other
+    # languages compiled into the same target.
+    #
+    target_compile_options(
+            ${TARGET_NAME} PUBLIC
+            "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/EHs-c-;/GR->"
+            "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fno-exceptions;-fno-rtti>" )
+    target_compile_definitions( ${TARGET_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:_HAS_EXCEPTIONS=0>" )
     #
     message( STATUS "${TARGET_NAME}: strict compilation options applied." )
     #
