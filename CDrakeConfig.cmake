@@ -4,10 +4,7 @@
 # INCLUDE GUARD
 # ========================================
 #
-if( _CDRAKE_LOADED )
-    return()
-endif()
-set( _CDRAKE_LOADED TRUE )
+include_guard( GLOBAL )
 #
 #
 # ========================================
@@ -16,30 +13,21 @@ set( _CDRAKE_LOADED TRUE )
 #
 cmake_minimum_required( VERSION 3.29 )
 #
-set( CDRAKE_VERSION_MAJOR 1 )
-set( CDRAKE_VERSION_MINOR 1 )
-set( CDRAKE_VERSION_PATCH 0 )
-set( CDRAKE_VERSION "${CDRAKE_VERSION_MAJOR}.${CDRAKE_VERSION_MINOR}.${CDRAKE_VERSION_PATCH}" )
+set( CDRK_VERSION_MAJOR 1 )
+set( CDRK_VERSION_MINOR 2 )
+set( CDRK_VERSION_PATCH 0 )
+set( CDRK_VERSION "${CDRK_VERSION_MAJOR}.${CDRK_VERSION_MINOR}.${CDRK_VERSION_PATCH}" )
 #
-set( CDRAKE_MODULES_DIR "${CMAKE_CURRENT_LIST_DIR}/modules" )
+set( CDRK_SCRIPTS_DIR "${CMAKE_CURRENT_LIST_DIR}/scripts/public" )
 #
 #
 # ========================================
-# MODULES
+# SCRIPTS
 # ========================================
 #
-# build
-include( "${CDRAKE_MODULES_DIR}/build/add_library_dist_targets.cmake" )
-include( "${CDRAKE_MODULES_DIR}/build/sources_disable_pedantic.cmake" )
-include( "${CDRAKE_MODULES_DIR}/build/target_configure_strict.cmake" )
+include( "${CDRK_SCRIPTS_DIR}/ensure_submodules.cmake" )
+include( "${CDRK_SCRIPTS_DIR}/generate_umbrella_header.cmake" )
+include( "${CDRK_SCRIPTS_DIR}/module.cmake" )
+include( "${CDRK_SCRIPTS_DIR}/ms_timestamp.cmake" )
 #
-# filegen
-include( "${CDRAKE_MODULES_DIR}/filegen/generate_umbrella_header.cmake" )
-#
-# git
-include( "${CDRAKE_MODULES_DIR}/git/ensure_submodules.cmake" )
-#
-# shell
-include( "${CDRAKE_MODULES_DIR}/shell/ms_timestamp.cmake" )
-#
-message( STATUS "CDrake v${CDRAKE_VERSION} toolkit loaded." )
+message( STATUS "CDrake v${CDRK_VERSION} toolkit loaded." )

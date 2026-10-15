@@ -1,12 +1,20 @@
-include( "${CDRAKE_MODULES_DIR}/shell/ms_timestamp.cmake" )
+include_guard( GLOBAL )
+
+include( "${CMAKE_CURRENT_LIST_DIR}/ms_timestamp.cmake" )
 
 function( cdrk_ensure_submodules )
     #
-    # 0. Set a lock for parallel executions.
-    file( LOCK "${CMAKE_SOURCE_DIR}/.git/cmake_submodule.lock" GUARD FUNCTION )
-    #
     find_package( Git REQUIRED )
     set( CMD_WORK_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
+    #
+    # 0. Set a lock for parallel executions (.git may be a file, so ask git where it is).
+    execute_process(
+            COMMAND ${GIT_EXECUTABLE} rev-parse --path-format=absolute --git-common-dir
+            WORKING_DIRECTORY ${CMD_WORK_DIR}
+            OUTPUT_VARIABLE GIT_COMMON_DIR
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            COMMAND_ERROR_IS_FATAL ANY )
+    file( LOCK "${GIT_COMMON_DIR}/cmake_submodule.lock" GUARD FUNCTION )
     #
     # 1. Fetch submodules status.
     execute_process(
@@ -15,8 +23,8 @@ function( cdrk_ensure_submodules )
             OUTPUT_VARIABLE SUBMODULE_STATUS
             OUTPUT_STRIP_TRAILING_WHITESPACE )
     #
-    # 2. Check if any submodule are not initialized.
-    if( SUBMODULE_STATUS MATCHES "^-" )
+    # 2. Check if any submodule are not initialized (one per line).
+    if( SUBMODULE_STATUS MATCHES "(^|\n)-" )
         #
         # If not, initialize them recursively on the current source dir and...
         message( STATUS "Uninitialized submodules detected, initializing..." )
@@ -25,7 +33,7 @@ function( cdrk_ensure_submodules )
         #
         execute_process(
                 COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                WORKING_DIRECTORY ${CMD_WORK_DIR}
                 RESULT_VARIABLE GIT_RESULT )
         #
         # ... if error result, halt cmake generation.
@@ -44,7 +52,7 @@ function( cdrk_ensure_submodules )
     endif()
     #
     # 3. Check if any submodules are out of date and alert the user.
-    if( SUBMODULE_STATUS MATCHES "^\\+" )
+    if( SUBMODULE_STATUS MATCHES "(^|\n)\\+" )
         #
         message( WARNING "Some submodules are out of sync. Consider running: git submodule update --recursive ..." )
         #
