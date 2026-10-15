@@ -1,4 +1,6 @@
-function( cdrk_target_configure_strict TARGET_NAME )
+include_guard( GLOBAL )
+
+function( _cdrk_target_configure_strict TARGET_NAME )
     #
     # --- Argument parsing -----------------------------------------------
     # ENABLE_EXCEPTIONS / ENABLE_RTTI: opt-in switches, both default OFF.
