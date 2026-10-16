@@ -367,66 +367,61 @@ function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     #
 endfunction()
 
-# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <ALIAS_NAME> <OUT_SOURCE_TARGET> [<source>...] )
+# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <OUT_SOURCE_TARGET> <OUT_LINK_TARGETS> )
 #
-# Adds the library targets and aliases, see cdrk_module. OUT_SOURCE_TARGET receives the target
-# compiling the sources (the object library for LIBRARY), where compile settings belong.
-function( _cdrk_add_library_target LIB_TYPE TARGET_NAME ALIAS_NAME OUT_SOURCE_TARGET )
-    #
-    set( SOURCE_FILES ${ARGN} )
+# Adds the library targets, see cdrk_module. OUT_SOURCE_TARGET receives the target compiling
+# the sources (the object library for LIBRARY), OUT_LINK_TARGETS the targets to link against.
+function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LINK_TARGETS )
     #
     string( TOUPPER "${TARGET_NAME}_EXPORT" EXPORT_MACRO )
     string( MAKE_C_IDENTIFIER "${EXPORT_MACRO}" EXPORT_MACRO )
     #
     if( LIB_TYPE STREQUAL "STATIC" )
         #
-        # Add static library only.
-        add_library( ${TARGET_NAME} STATIC ${SOURCE_FILES} )
-        add_library( ${ALIAS_NAME} ALIAS ${TARGET_NAME} )
+        add_library( ${TARGET_NAME} STATIC )
         _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} STATIC )
         #
         set( SOURCE_TARGET ${TARGET_NAME} )
+        set( LINK_TARGETS ${TARGET_NAME} )
         #
     elseif( LIB_TYPE STREQUAL "SHARED" )
         #
-        # Add shared library only.
-        add_library( ${TARGET_NAME} SHARED ${SOURCE_FILES} )
-        add_library( ${ALIAS_NAME} ALIAS ${TARGET_NAME} )
+        add_library( ${TARGET_NAME} SHARED )
         _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} BUILD )
         _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} IMPORT )
         #
         set( SOURCE_TARGET ${TARGET_NAME} )
+        set( LINK_TARGETS ${TARGET_NAME} )
         #
     elseif( LIB_TYPE STREQUAL "LIBRARY" )
         #
         set( OBJECT_TARGET "${TARGET_NAME}-object" )
         set( STATIC_TARGET "${TARGET_NAME}-static" )
         #
-        # Add the object library with the sources, PIC since it is linked into the shared one.
-        add_library( ${OBJECT_TARGET} OBJECT ${SOURCE_FILES} )
+        # The object library compiles the sources once for both the static and shared libraries,
+        # so users can link to either without building twice. PIC is needed by the shared one.
+        add_library( ${OBJECT_TARGET} OBJECT )
         set_target_properties( ${OBJECT_TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON )
         _cdrk_target_export_api( ${OBJECT_TARGET} ${EXPORT_MACRO} BUILD )
         #
         # Add static/shared library targets and link them against object.
         add_library( ${STATIC_TARGET} STATIC )
-        add_library( "${ALIAS_NAME}-static" ALIAS ${STATIC_TARGET} )
         target_link_libraries( ${STATIC_TARGET} PUBLIC ${OBJECT_TARGET} )
-        set_target_properties( ${STATIC_TARGET} PROPERTIES OUTPUT_NAME ${TARGET_NAME} )
         _cdrk_target_export_api( ${STATIC_TARGET} ${EXPORT_MACRO} STATIC )
         #
         add_library( ${TARGET_NAME} SHARED )
-        add_library( ${ALIAS_NAME} ALIAS ${TARGET_NAME} )
         target_link_libraries( ${TARGET_NAME} PUBLIC ${OBJECT_TARGET} )
         _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} IMPORT )
         #
-        # On Windows the static and import libraries would both be named <name>.lib.
-        if( WIN32 )
+        # Both share the output name, except on Windows where the static and import libraries would clash as <name>.lib.
+        if( NOT WIN32 )
             #
-            set_target_properties( ${STATIC_TARGET} PROPERTIES OUTPUT_NAME "${TARGET_NAME}-static" )
+            set_target_properties( ${STATIC_TARGET} PROPERTIES OUTPUT_NAME ${TARGET_NAME} )
             #
         endif()
         #
         set( SOURCE_TARGET ${OBJECT_TARGET} )
+        set( LINK_TARGETS ${TARGET_NAME} ${STATIC_TARGET} )
         #
     else()
         #
@@ -435,12 +430,12 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME ALIAS_NAME OUT_SOURCE_TA
     endif()
     #
     set( ${OUT_SOURCE_TARGET} ${SOURCE_TARGET} PARENT_SCOPE )
+    set( ${OUT_LINK_TARGETS} ${LINK_TARGETS} PARENT_SCOPE )
     #
 endfunction()
 
 
 # cdrk_module( <MODULE_NAME> <EXECUTABLE|STATIC|SHARED|LIBRARY>
-#              [SOURCES <file>...]
 #              [INCLUDE_DIRECTORY <dir>]
 #              [SOURCE_DIRECTORY <dir>]
 #              [STRICT | STRICT_ARGS <arg>...] )
@@ -448,12 +443,12 @@ endfunction()
 # Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
 # <namespace> is read from ${PROJECT_NAME}_NAMESPACE. If no namespace is defined, the
 # target is defined as <MODULE_NAME> with no alias. The complete target name is returned
-# in MODULE_TARGET_NAME on the parent scope.
+# in MODULE_TARGET_NAME on the parent scope. Sources are added with cdrk_module_sources.
 # EXECUTABLE:         an executable, runtime DLLs are copied next to it on Windows.
 # STATIC/SHARED:      a single library of that type.
 # LIBRARY:            both, sources compiled once; the static one is <namespace>::<MODULE_NAME>-static.
 # Libraries define <NAMESPACE>_<MODULE_NAME>_EXPORT (upper case) to mark exported symbols.
-# INCLUDE_DIRECTORY:  public headers, default ${CMAKE_CURRENT_SOURCE_DIR}/include.
+# INCLUDE_DIRECTORY:  public headers, defaults to ${CMAKE_CURRENT_SOURCE_DIR}/include or .../import.
 # SOURCE_DIRECTORY:   private headers, default ${CMAKE_CURRENT_SOURCE_DIR}/source.
 # STRICT:             applies strict compilation options with their defaults.
 # STRICT_ARGS:        applies strict compilation options with these arguments
@@ -461,7 +456,7 @@ endfunction()
 function( cdrk_module MODULE_NAME MODULE_TYPE )
     #
     # 1. Parse and validate arguments.
-    cmake_parse_arguments( PARSE_ARGV 2 ARG "STRICT" "INCLUDE_DIRECTORY;SOURCE_DIRECTORY" "SOURCES;STRICT_ARGS" )
+    cmake_parse_arguments( PARSE_ARGV 2 ARG "STRICT" "INCLUDE_DIRECTORY;SOURCE_DIRECTORY" "STRICT_ARGS" )
     #
     if( ARG_UNPARSED_ARGUMENTS )
         #
@@ -476,20 +471,6 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endif()
     #
-    if( NOT DEFINED "${PROJECT_NAME}_NAMESPACE" )
-        #
-        set( MODULE_NAMESPACE "" )
-        set( TARGET_NAME "${MODULE_NAME}" )
-        set( ALIAS_NAME "::${MODULE_NAME}" )
-        #
-    else()
-        #
-        set( MODULE_NAMESPACE "${${PROJECT_NAME}_NAMESPACE}" )
-        set( TARGET_NAME "${MODULE_NAMESPACE}_${MODULE_NAME}" )
-        set( ALIAS_NAME "${MODULE_NAMESPACE}::${MODULE_NAME}" )
-        #
-    endif( )
-    #
     # Default directories, unless given through args.
     if( NOT DEFINED ARG_INCLUDE_DIRECTORY )
         #
@@ -503,12 +484,25 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endif()
     #
-    # 2. Add the module target.
+    # 2. Name the target, namespaced only if the project defines a namespace.
+    if( DEFINED "${PROJECT_NAME}_NAMESPACE" )
+        #
+        set( TARGET_NAME "${${PROJECT_NAME}_NAMESPACE}_${MODULE_NAME}" )
+        set( ALIAS_NAME "${${PROJECT_NAME}_NAMESPACE}::${MODULE_NAME}" )
+        #
+    else()
+        #
+        set( TARGET_NAME "${MODULE_NAME}" )
+        set( ALIAS_NAME "" )
+        #
+    endif()
+    #
+    # 3. Add the module targets.
     if( MODULE_TYPE STREQUAL "EXECUTABLE" )
         #
-        add_executable( "${TARGET_NAME}" ${ARG_SOURCES} )
-        add_executable( "${ALIAS_NAME}" ALIAS "${TARGET_NAME}" )
+        add_executable( "${TARGET_NAME}" )
         set( SOURCE_TARGET "${TARGET_NAME}" )
+        set( LINK_TARGETS "${TARGET_NAME}" )
         #
         # Windows has no rpath, so copy the runtime DLLs next to the executable ('true' if none).
         if( WIN32 )
@@ -520,9 +514,9 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
             #
         endif()
         #
-    elseif( MODULE_TYPE STREQUAL "STATIC" OR MODULE_TYPE STREQUAL "SHARED" OR MODULE_TYPE STREQUAL "LIBRARY" )
+    elseif( MODULE_TYPE MATCHES "^(STATIC|SHARED|LIBRARY)$" )
         #
-        _cdrk_add_library_target( ${MODULE_TYPE} "${TARGET_NAME}" "${ALIAS_NAME}" SOURCE_TARGET ${ARG_SOURCES} )
+        _cdrk_add_library_target( ${MODULE_TYPE} "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
         #
     else()
         #
@@ -530,16 +524,31 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endif()
     #
-    # 3. Export as <namespace>::<MODULE_NAME> instead of <namespace>::<namespace>_<MODULE_NAME>.
-    set_target_properties( "${TARGET_NAME}" PROPERTIES EXPORT_NAME "${MODULE_NAME}" )
-    if( MODULE_TYPE STREQUAL "LIBRARY" )
+    # 4. Name the targets <namespace>::<MODULE_NAME>[-static|-object] for consumers, when
+    #    exported (EXPORT_NAME) and, for the linkable ones, in this build (alias).
+    string( LENGTH "${TARGET_NAME}" TARGET_NAME_LENGTH )
+    foreach( MODULE_TARGET IN LISTS LINK_TARGETS SOURCE_TARGET )
         #
-        set_target_properties( "${TARGET_NAME}-static" PROPERTIES EXPORT_NAME "${MODULE_NAME}-static" )
-        set_target_properties( "${TARGET_NAME}-object" PROPERTIES EXPORT_NAME "${MODULE_NAME}-object" )
+        string( SUBSTRING "${MODULE_TARGET}" ${TARGET_NAME_LENGTH} -1 SUFFIX )
+        set_target_properties( "${MODULE_TARGET}" PROPERTIES EXPORT_NAME "${MODULE_NAME}${SUFFIX}" )
         #
-    endif()
+        if( ALIAS_NAME AND MODULE_TARGET IN_LIST LINK_TARGETS AND NOT TARGET "${ALIAS_NAME}${SUFFIX}" )
+            #
+            if( MODULE_TYPE STREQUAL "EXECUTABLE" )
+                #
+                add_executable( "${ALIAS_NAME}${SUFFIX}" ALIAS "${MODULE_TARGET}" )
+                #
+            else()
+                #
+                add_library( "${ALIAS_NAME}${SUFFIX}" ALIAS "${MODULE_TARGET}" )
+                #
+            endif()
+            #
+        endif()
+        #
+    endforeach()
     #
-    # 4. Configure the target that compiles the sources and...
+    # 5. Configure the target that compiles the sources and...
     target_include_directories( "${SOURCE_TARGET}"
                                 PUBLIC "$<BUILD_INTERFACE:${ARG_INCLUDE_DIRECTORY}>"
                                 PRIVATE "${ARG_SOURCE_DIRECTORY}" )
@@ -551,7 +560,248 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endif()
     #
+    # 6. Remember the module layout for cdrk_module_sources. Executables have no consumers,
+    #    so their file sets stay private.
+    if( MODULE_TYPE STREQUAL "EXECUTABLE" )
+        #
+        set( FILE_SET_SCOPE PRIVATE )
+        #
+    else()
+        #
+        set( FILE_SET_SCOPE PUBLIC )
+        #
+    endif()
+    #
+    set_target_properties( "${TARGET_NAME}" PROPERTIES
+                           _CDRK_SOURCE_TARGET "${SOURCE_TARGET}"
+                           _CDRK_LINK_TARGETS "${LINK_TARGETS}"
+                           _CDRK_FILE_SET_SCOPE "${FILE_SET_SCOPE}"
+                           _CDRK_INCLUDE_DIRECTORY "${ARG_INCLUDE_DIRECTORY}"
+                           _CDRK_SOURCE_DIRECTORY "${ARG_SOURCE_DIRECTORY}" )
+    #
     set( MODULE_TARGET_NAME "${TARGET_NAME}" PARENT_SCOPE )
+    #
+endfunction()
+
+#
+# ----------------------------------------
+# scripts/public/module_sources.cmake
+# ----------------------------------------
+#
+#
+# ----------------------------------------
+# scripts/private/module_files.cmake
+# ----------------------------------------
+#
+# _cdrk_resolve_module_files( <OUT_FILES> <BASE_DIRECTORY> [<file|glob>...] [EXCLUDE <file|glob>...] )
+#
+# Resolves files relative to BASE_DIRECTORY into absolute paths in OUT_FILES. Entries with
+# wildcards (*, ? or [) are globbed recursively and re-globbed on build if files are added.
+# Generator expressions are passed through untouched. EXCLUDE entries are removed from the result.
+function( _cdrk_resolve_module_files OUT_FILES BASE_DIRECTORY )
+    #
+    cmake_parse_arguments( PARSE_ARGV 2 ARG "" "" "EXCLUDE" )
+    #
+    set( FILES "" )
+    foreach( ENTRY ${ARG_UNPARSED_ARGUMENTS} )
+        #
+        if( ENTRY MATCHES "^\\$<" )
+            #
+            list( APPEND FILES "${ENTRY}" )
+            continue()
+            #
+        endif()
+        #
+        cmake_path( ABSOLUTE_PATH ENTRY BASE_DIRECTORY "${BASE_DIRECTORY}" NORMALIZE )
+        if( ENTRY MATCHES "[*?[]" )
+            #
+            file( GLOB_RECURSE GLOBBED_FILES CONFIGURE_DEPENDS "${ENTRY}" )
+            if( NOT GLOBBED_FILES )
+                #
+                message( AUTHOR_WARNING "'${ENTRY}' matches no file." )
+                #
+            endif()
+            list( APPEND FILES ${GLOBBED_FILES} )
+            #
+        else()
+            #
+            list( APPEND FILES "${ENTRY}" )
+            #
+        endif()
+        #
+    endforeach()
+    #
+    if( FILES AND ARG_EXCLUDE )
+        #
+        _cdrk_resolve_module_files( EXCLUDED_FILES "${BASE_DIRECTORY}" ${ARG_EXCLUDE} )
+        list( REMOVE_ITEM FILES ${EXCLUDED_FILES} )
+        #
+    endif()
+    #
+    set( ${OUT_FILES} ${FILES} PARENT_SCOPE )
+    #
+endfunction()
+
+# _cdrk_target_add_file_set( <TARGET_NAME> <PRIVATE|PUBLIC> <HEADERS|CXX_MODULES> <BASE_DIRECTORY> [<file>...] )
+#
+# Adds files to the default file set of that type, skipping the ones already in it, since
+# file sets warn on duplicates and overlapping globs across calls easily produce them.
+function( _cdrk_target_add_file_set TARGET_NAME SCOPE TYPE BASE_DIRECTORY )
+    #
+    set( FILES ${ARGN} )
+    #
+    if( TYPE STREQUAL "HEADERS" )
+        #
+        get_target_property( EXISTING_FILES "${TARGET_NAME}" HEADER_SET )
+        #
+    else()
+        #
+        get_target_property( EXISTING_FILES "${TARGET_NAME}" CXX_MODULE_SET )
+        #
+    endif()
+    #
+    if( FILES AND EXISTING_FILES )
+        #
+        list( REMOVE_ITEM FILES ${EXISTING_FILES} )
+        #
+    endif()
+    #
+    if( FILES )
+        #
+        target_sources( "${TARGET_NAME}" ${SCOPE} FILE_SET ${TYPE} BASE_DIRS "${BASE_DIRECTORY}" FILES ${FILES} )
+        #
+    endif()
+    #
+endfunction()
+
+#
+# ----------------------------------------
+# scripts/private/sources_disable_pedantic.cmake
+# ----------------------------------------
+#
+# _cdrk_sources_disable_pedantic( <TARGET_NAME> [<source>...] )
+#
+# Disables pedantic warnings and precompiled headers on the given sources of TARGET_NAME,
+# visible from the target's directory even if called from another one.
+function( _cdrk_sources_disable_pedantic TARGET_NAME )
+    #
+    set( SOURCES ${ARGN} )
+    #
+    # MSVC has no pedantic warnings.
+    set_source_files_properties( ${SOURCES} TARGET_DIRECTORY "${TARGET_NAME}" PROPERTIES
+                                 SKIP_PRECOMPILE_HEADERS ON
+                                 COMPILE_OPTIONS "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-Wno-pedantic>;$<$<COMPILE_LANG_AND_ID:OBJCXX,Clang,AppleClang>:-Wno-pedantic>" )
+    #
+endfunction()
+
+
+# cdrk_module_sources( <TARGET>
+#                      [SOURCES <file|glob>...]
+#                      [HEADERS <file|glob>...]
+#                      [MODULES <file|glob>...]
+#                      [EXCLUDE <file|glob>...]
+#                      [NO_PEDANTIC]
+#                      [FRAMEWORKS <name>...]
+#                      [IF <condition>...] )
+#
+# Adds files to a target made by cdrk_module, given by name or alias, from any directory.
+# Files go to the target compiling the sources, so this works for every module type.
+# Entries with wildcards (*, ? or [) are globbed recursively, e.g. "platform/win32/*.cpp".
+# SOURCES:      private sources, relative to the module SOURCE_DIRECTORY. Objective-C++
+#               sources need the OBJCXX language enabled by the project.
+# HEADERS:      public headers, relative to the module INCLUDE_DIRECTORY, as a HEADERS file set.
+# MODULES:      C++20 module interface units, relative to the module INCLUDE_DIRECTORY, as a
+#               CXX_MODULES file set, skipping precompiled headers.
+# EXCLUDE:      files left out of this call, relative to each kind's directory, e.g. "platform/*".
+# NO_PEDANTIC:  disables pedantic warnings and precompiled headers on this call's files.
+# FRAMEWORKS:   Apple frameworks to link, e.g. Cocoa.
+# IF:           only adds anything if the condition holds, e.g. IF APPLE or IF WIN32 AND NOT MINGW.
+function( cdrk_module_sources TARGET )
+    #
+    # 1. Parse and validate arguments.
+    cmake_parse_arguments( PARSE_ARGV 1 ARG "NO_PEDANTIC" "" "SOURCES;HEADERS;MODULES;EXCLUDE;FRAMEWORKS;IF" )
+    #
+    if( ARG_UNPARSED_ARGUMENTS )
+        #
+        message( FATAL_ERROR "cdrk_module_sources: unexpected arguments '${ARG_UNPARSED_ARGUMENTS}'!" )
+        #
+    endif()
+    #
+    # Nested, as an empty condition would not parse.
+    if( DEFINED ARG_IF )
+        #
+        if( NOT ( ${ARG_IF} ) )
+            #
+            return()
+            #
+        endif()
+        #
+    endif()
+    #
+    # 2. Read the module layout, from the real target since aliases have no custom properties.
+    get_target_property( ALIASED_TARGET "${TARGET}" ALIASED_TARGET )
+    if( ALIASED_TARGET )
+        #
+        set( TARGET "${ALIASED_TARGET}" )
+        #
+    endif()
+    #
+    foreach( PROPERTY SOURCE_TARGET LINK_TARGETS FILE_SET_SCOPE INCLUDE_DIRECTORY SOURCE_DIRECTORY )
+        #
+        get_target_property( ${PROPERTY} "${TARGET}" _CDRK_${PROPERTY} )
+        #
+    endforeach()
+    #
+    if( NOT SOURCE_TARGET )
+        #
+        message( FATAL_ERROR "cdrk_module_sources: '${TARGET}' was not created by cdrk_module!" )
+        #
+    endif()
+    #
+    # 3. Resolve files and globs.
+    _cdrk_resolve_module_files( SOURCE_FILES "${SOURCE_DIRECTORY}" ${ARG_SOURCES} EXCLUDE ${ARG_EXCLUDE} )
+    _cdrk_resolve_module_files( HEADER_FILES "${INCLUDE_DIRECTORY}" ${ARG_HEADERS} EXCLUDE ${ARG_EXCLUDE} )
+    _cdrk_resolve_module_files( MODULE_FILES "${INCLUDE_DIRECTORY}" ${ARG_MODULES} EXCLUDE ${ARG_EXCLUDE} )
+    #
+    # Objective-C++ sources are silently not compiled if their language is not enabled.
+    get_property( ENABLED_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES )
+    if( SOURCE_FILES MATCHES "\\.mm(;|$)" AND NOT "OBJCXX" IN_LIST ENABLED_LANGUAGES )
+        #
+        message( FATAL_ERROR "${TARGET}: .mm sources need the OBJCXX language, add it to project() or call enable_language( OBJCXX )!" )
+        #
+    endif()
+    #
+    # 4. Add the files, each kind the way it needs.
+    if( SOURCE_FILES )
+        #
+        target_sources( "${SOURCE_TARGET}" PRIVATE ${SOURCE_FILES} )
+        #
+    endif()
+    #
+    _cdrk_target_add_file_set( "${SOURCE_TARGET}" ${FILE_SET_SCOPE} HEADERS "${INCLUDE_DIRECTORY}" ${HEADER_FILES} )
+    _cdrk_target_add_file_set( "${SOURCE_TARGET}" ${FILE_SET_SCOPE} CXX_MODULES "${INCLUDE_DIRECTORY}" ${MODULE_FILES} )
+    if( MODULE_FILES )
+        #
+        set_source_files_properties( ${MODULE_FILES} TARGET_DIRECTORY "${SOURCE_TARGET}" PROPERTIES SKIP_PRECOMPILE_HEADERS ON )
+        #
+    endif()
+    #
+    # 5. Apply the modifiers. Frameworks go on the linked targets, as an object library has no link step.
+    if( ARG_NO_PEDANTIC )
+        #
+        _cdrk_sources_disable_pedantic( "${SOURCE_TARGET}" ${SOURCE_FILES} ${HEADER_FILES} ${MODULE_FILES} )
+        #
+    endif()
+    #
+    foreach( FRAMEWORK ${ARG_FRAMEWORKS} )
+        #
+        foreach( LINK_TARGET ${LINK_TARGETS} )
+            #
+            target_link_libraries( "${LINK_TARGET}" PRIVATE "$<LINK_LIBRARY:FRAMEWORK,${FRAMEWORK}>" )
+            #
+        endforeach()
+        #
+    endforeach()
     #
 endfunction()
 
