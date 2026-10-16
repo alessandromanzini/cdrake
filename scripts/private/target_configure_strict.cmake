@@ -17,7 +17,7 @@ function( _cdrk_target_configure_strict TARGET_NAME )
     # externally visible configuration, therefore they are private.
     #
     target_compile_options(
-            ${TARGET_NAME} PRIVATE
+            "${TARGET_NAME}" PRIVATE
             "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/W4;/WX;/permissive-;/w14062;/w14165;/w14242;/w14254;/w14263;/w14265;/w14287;/w14296;/w14311;/w14545;/w14546;/w14547;/w14549;/w14555;/w14619;/w14640;/w14826;/w14905;/w14906;/w14928;/fp:precise;/Zc:__cplusplus;/Zc:inline;/Zc:preprocessor>"
             "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-Wall;-Wextra;-Wpedantic;-Werror;-Wshadow;-Wnon-virtual-dtor;-Wold-style-cast;-Wcast-align;-Wunused;-Woverloaded-virtual;-Wconversion;-Wsign-conversion;-Wdouble-promotion;-Wformat=2;-Wno-unknown-pragmas>"
             ${ARG_UNPARSED_ARGUMENTS} )
@@ -57,13 +57,13 @@ function( _cdrk_target_configure_strict TARGET_NAME )
     endif()
     #
     target_compile_options(
-            ${TARGET_NAME} PUBLIC
+            "${TARGET_NAME}" PUBLIC
             "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:${_msvc_eh_flag};${_msvc_rtti_flag}>"
             "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:${_gnu_exception_flag};${_gnu_rtti_flag}>" )
     #
     # _HAS_EXCEPTIONS=0 must only be defined when exceptions are disabled.
     if( NOT ARG_ENABLE_EXCEPTIONS )
-        target_compile_definitions( ${TARGET_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:_HAS_EXCEPTIONS=0>" )
+        target_compile_definitions( "${TARGET_NAME}" PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:_HAS_EXCEPTIONS=0>" )
     endif()
     #
     message( STATUS "${TARGET_NAME}: strict compilation options applied (EXCEPTIONS=${ARG_ENABLE_EXCEPTIONS}, RTTI=${ARG_ENABLE_RTTI})." )

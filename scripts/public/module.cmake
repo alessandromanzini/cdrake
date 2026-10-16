@@ -43,6 +43,19 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endif()
     #
+    # Default directories, unless given through args.
+    if( NOT DEFINED ARG_INCLUDE_DIRECTORY )
+        #
+        set( ARG_INCLUDE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+        #
+    endif()
+    #
+    if( NOT DEFINED ARG_SOURCE_DIRECTORY )
+        #
+        set( ARG_SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/source" )
+        #
+    endif()
+    #
     # 2. Name the target, namespaced only if the project defines a namespace.
     if( DEFINED "${PROJECT_NAME}_NAMESPACE" )
         #
@@ -75,7 +88,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     elseif( MODULE_TYPE MATCHES "^(STATIC|SHARED|LIBRARY)$" )
         #
-        _cdrk_add_library_target( ${MODULE_TYPE} "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
+        _cdrk_add_library_target( "${MODULE_TYPE}" "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
         #
     else()
         #
@@ -88,7 +101,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
     string( LENGTH "${TARGET_NAME}" TARGET_NAME_LENGTH )
     foreach( MODULE_TARGET IN LISTS LINK_TARGETS SOURCE_TARGET )
         #
-        string( SUBSTRING "${MODULE_TARGET}" ${TARGET_NAME_LENGTH} -1 SUFFIX )
+        string( SUBSTRING "${MODULE_TARGET}" "${TARGET_NAME_LENGTH}" -1 SUFFIX )
         set_target_properties( "${MODULE_TARGET}" PROPERTIES EXPORT_NAME "${MODULE_NAME}${SUFFIX}" )
         #
         if( ALIAS_NAME AND MODULE_TARGET IN_LIST LINK_TARGETS AND NOT TARGET "${ALIAS_NAME}${SUFFIX}" )
@@ -120,14 +133,14 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
     endif()
     #
     # 6. Configure the target that compiles the sources and...
-    target_include_directories( ${SOURCE_TARGET}
-                                ${FILE_SET_SCOPE} $<BUILD_INTERFACE:${ARG_INCLUDE_DIRECTORY}>
-                                PRIVATE ${ARG_SOURCE_DIRECTORY} )
+    target_include_directories( "${SOURCE_TARGET}"
+                                "${FILE_SET_SCOPE}" "$<BUILD_INTERFACE:${ARG_INCLUDE_DIRECTORY}>"
+                                PRIVATE "${ARG_SOURCE_DIRECTORY}" )
     #
     # ... if args ask for it, apply strict options.
     if( ARG_STRICT )
         #
-        _cdrk_target_configure_strict( ${SOURCE_TARGET} ${ARG_STRICT_ARGS} )
+        _cdrk_target_configure_strict( "${SOURCE_TARGET}" ${ARG_STRICT_ARGS} )
         #
     endif()
     #
@@ -138,6 +151,6 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
                            _CDRK_INCLUDE_DIRECTORY "${ARG_INCLUDE_DIRECTORY}"
                            _CDRK_SOURCE_DIRECTORY "${ARG_SOURCE_DIRECTORY}" )
     #
-    set( MODULE_TARGET_NAME ${TARGET_NAME} PARENT_SCOPE )
+    set( MODULE_TARGET_NAME "${TARGET_NAME}" PARENT_SCOPE )
     #
 endfunction()

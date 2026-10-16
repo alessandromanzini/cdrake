@@ -10,12 +10,12 @@ include( "${CMAKE_CURRENT_LIST_DIR}/ms_timestamp.cmake" )
 function( cdrk_ensure_submodules )
     #
     find_package( Git REQUIRED )
-    set( CMD_WORK_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
+    set( CMD_WORK_DIR "${CMAKE_CURRENT_SOURCE_DIR}" )
     #
     # 0. Set a lock for parallel executions (.git may be a file, so ask git where it is).
     execute_process(
-            COMMAND ${GIT_EXECUTABLE} rev-parse --path-format=absolute --git-common-dir
-            WORKING_DIRECTORY ${CMD_WORK_DIR}
+            COMMAND "${GIT_EXECUTABLE}" rev-parse --path-format=absolute --git-common-dir
+            WORKING_DIRECTORY "${CMD_WORK_DIR}"
             OUTPUT_VARIABLE GIT_COMMON_DIR
             OUTPUT_STRIP_TRAILING_WHITESPACE
             COMMAND_ERROR_IS_FATAL ANY )
@@ -23,8 +23,8 @@ function( cdrk_ensure_submodules )
     #
     # 1. Fetch submodules status.
     execute_process(
-            COMMAND ${GIT_EXECUTABLE} submodule status
-            WORKING_DIRECTORY ${CMD_WORK_DIR}
+            COMMAND "${GIT_EXECUTABLE}" submodule status
+            WORKING_DIRECTORY "${CMD_WORK_DIR}"
             OUTPUT_VARIABLE SUBMODULE_STATUS
             OUTPUT_STRIP_TRAILING_WHITESPACE )
     #
@@ -37,8 +37,8 @@ function( cdrk_ensure_submodules )
         cdrk_ms_timestamp( T_START_MS )
         #
         execute_process(
-                COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                WORKING_DIRECTORY ${CMD_WORK_DIR}
+                COMMAND "${GIT_EXECUTABLE}" submodule update --init --recursive
+                WORKING_DIRECTORY "${CMD_WORK_DIR}"
                 RESULT_VARIABLE GIT_RESULT )
         #
         # ... if error result, halt cmake generation.

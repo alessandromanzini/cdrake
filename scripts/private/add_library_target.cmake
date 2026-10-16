@@ -26,18 +26,18 @@ function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     # 2. Define the macro: empty for static, export while building, import for consumers.
     if( MODE STREQUAL "STATIC" )
         #
-        target_compile_definitions( ${TARGET_NAME} PUBLIC "${EXPORT_MACRO}=" )
+        target_compile_definitions( "${TARGET_NAME}" PUBLIC "${EXPORT_MACRO}=" )
         #
     elseif( MODE STREQUAL "BUILD" )
         #
-        target_compile_definitions( ${TARGET_NAME} PRIVATE "${EXPORT_MACRO}=${EXPORT_ATTRIBUTE}" )
-        set_target_properties( ${TARGET_NAME} PROPERTIES
+        target_compile_definitions( "${TARGET_NAME}" PRIVATE "${EXPORT_MACRO}=${EXPORT_ATTRIBUTE}" )
+        set_target_properties( "${TARGET_NAME}" PROPERTIES
                                CXX_VISIBILITY_PRESET hidden
                                VISIBILITY_INLINES_HIDDEN ON )
         #
     elseif( MODE STREQUAL "IMPORT" )
         #
-        target_compile_definitions( ${TARGET_NAME} INTERFACE "${EXPORT_MACRO}=${IMPORT_ATTRIBUTE}" )
+        target_compile_definitions( "${TARGET_NAME}" INTERFACE "${EXPORT_MACRO}=${IMPORT_ATTRIBUTE}" )
         #
     else()
         #
@@ -58,20 +58,20 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LI
     #
     if( LIB_TYPE STREQUAL "STATIC" )
         #
-        add_library( ${TARGET_NAME} STATIC )
-        _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} STATIC )
+        add_library( "${TARGET_NAME}" STATIC )
+        _cdrk_target_export_api( "${TARGET_NAME}" "${EXPORT_MACRO}" STATIC )
         #
-        set( SOURCE_TARGET ${TARGET_NAME} )
-        set( LINK_TARGETS ${TARGET_NAME} )
+        set( SOURCE_TARGET "${TARGET_NAME}" )
+        set( LINK_TARGETS "${TARGET_NAME}" )
         #
     elseif( LIB_TYPE STREQUAL "SHARED" )
         #
-        add_library( ${TARGET_NAME} SHARED )
-        _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} BUILD )
-        _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} IMPORT )
+        add_library( "${TARGET_NAME}" SHARED )
+        _cdrk_target_export_api( "${TARGET_NAME}" "${EXPORT_MACRO}" BUILD )
+        _cdrk_target_export_api( "${TARGET_NAME}" "${EXPORT_MACRO}" IMPORT )
         #
-        set( SOURCE_TARGET ${TARGET_NAME} )
-        set( LINK_TARGETS ${TARGET_NAME} )
+        set( SOURCE_TARGET "${TARGET_NAME}" )
+        set( LINK_TARGETS "${TARGET_NAME}" )
         #
     elseif( LIB_TYPE STREQUAL "LIBRARY" )
         #
@@ -80,28 +80,28 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LI
         #
         # The object library compiles the sources once for both the static and shared libraries,
         # so users can link to either without building twice. PIC is needed by the shared one.
-        add_library( ${OBJECT_TARGET} OBJECT )
-        set_target_properties( ${OBJECT_TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON )
-        _cdrk_target_export_api( ${OBJECT_TARGET} ${EXPORT_MACRO} BUILD )
+        add_library( "${OBJECT_TARGET}" OBJECT )
+        set_target_properties( "${OBJECT_TARGET}" PROPERTIES POSITION_INDEPENDENT_CODE ON )
+        _cdrk_target_export_api( "${OBJECT_TARGET}" "${EXPORT_MACRO}" BUILD )
         #
         # Add static/shared library targets and link them against object.
-        add_library( ${STATIC_TARGET} STATIC )
-        target_link_libraries( ${STATIC_TARGET} PUBLIC ${OBJECT_TARGET} )
-        _cdrk_target_export_api( ${STATIC_TARGET} ${EXPORT_MACRO} STATIC )
+        add_library( "${STATIC_TARGET}" STATIC )
+        target_link_libraries( "${STATIC_TARGET}" PUBLIC "${OBJECT_TARGET}" )
+        _cdrk_target_export_api( "${STATIC_TARGET}" "${EXPORT_MACRO}" STATIC )
         #
-        add_library( ${TARGET_NAME} SHARED )
-        target_link_libraries( ${TARGET_NAME} PUBLIC ${OBJECT_TARGET} )
-        _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} IMPORT )
+        add_library( "${TARGET_NAME}" SHARED )
+        target_link_libraries( "${TARGET_NAME}" PUBLIC "${OBJECT_TARGET}" )
+        _cdrk_target_export_api( "${TARGET_NAME}" "${EXPORT_MACRO}" IMPORT )
         #
         # Both share the output name, except on Windows where the static and import libraries would clash as <name>.lib.
         if( NOT WIN32 )
             #
-            set_target_properties( ${STATIC_TARGET} PROPERTIES OUTPUT_NAME ${TARGET_NAME} )
+            set_target_properties( "${STATIC_TARGET}" PROPERTIES OUTPUT_NAME "${TARGET_NAME}" )
             #
         endif()
         #
-        set( SOURCE_TARGET ${OBJECT_TARGET} )
-        set( LINK_TARGETS ${TARGET_NAME} ${STATIC_TARGET} )
+        set( SOURCE_TARGET "${OBJECT_TARGET}" )
+        set( LINK_TARGETS "${TARGET_NAME}" "${STATIC_TARGET}" )
         #
     else()
         #
@@ -109,7 +109,7 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LI
         #
     endif()
     #
-    set( ${OUT_SOURCE_TARGET} ${SOURCE_TARGET} PARENT_SCOPE )
+    set( ${OUT_SOURCE_TARGET} "${SOURCE_TARGET}" PARENT_SCOPE )
     set( ${OUT_LINK_TARGETS} ${LINK_TARGETS} PARENT_SCOPE )
     #
 endfunction()

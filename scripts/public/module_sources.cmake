@@ -86,8 +86,8 @@ function( cdrk_module_sources TARGET )
         #
     endif()
     #
-    _cdrk_target_add_file_set( "${SOURCE_TARGET}" ${FILE_SET_SCOPE} HEADERS "${INCLUDE_DIRECTORY}" ${HEADER_FILES} )
-    _cdrk_target_add_file_set( "${SOURCE_TARGET}" ${FILE_SET_SCOPE} CXX_MODULES "${INCLUDE_DIRECTORY}" ${MODULE_FILES} )
+    _cdrk_target_add_file_set( "${SOURCE_TARGET}" "${FILE_SET_SCOPE}" HEADERS "${INCLUDE_DIRECTORY}" ${HEADER_FILES} )
+    _cdrk_target_add_file_set( "${SOURCE_TARGET}" "${FILE_SET_SCOPE}" CXX_MODULES "${INCLUDE_DIRECTORY}" ${MODULE_FILES} )
     if( MODULE_FILES )
         #
         set_source_files_properties( ${MODULE_FILES} TARGET_DIRECTORY "${SOURCE_TARGET}" PROPERTIES SKIP_PRECOMPILE_HEADERS ON )

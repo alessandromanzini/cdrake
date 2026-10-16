@@ -61,7 +61,7 @@ function( _cdrk_check_for_updates )
     endif()
     #
     # 2. Compare with the loaded version.
-    if( DEFINED CACHE{_CDRK_LATEST_VERSION} AND CDRK_VERSION VERSION_LESS $CACHE{_CDRK_LATEST_VERSION} )
+    if( DEFINED CACHE{_CDRK_LATEST_VERSION} AND CDRK_VERSION VERSION_LESS "$CACHE{_CDRK_LATEST_VERSION}" )
         #
         if( CDRK_SINGLE_FILE )
             #

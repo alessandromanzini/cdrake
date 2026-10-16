@@ -17,7 +17,7 @@ include_guard( GLOBAL )
 cmake_minimum_required( VERSION 3.29 )
 #
 set( CDRK_VERSION_MAJOR 1 )
-set( CDRK_VERSION_MINOR 2 )
+set( CDRK_VERSION_MINOR 3 )
 set( CDRK_VERSION_PATCH 0 )
 set( CDRK_VERSION "${CDRK_VERSION_MAJOR}.${CDRK_VERSION_MINOR}.${CDRK_VERSION_PATCH}" )
 #
@@ -51,7 +51,7 @@ function( cdrk_ms_timestamp OUTPUT_TIMESTAMP )
     string( TIMESTAMP TIMESTAMP_US "%s%f" UTC )
     math( EXPR TIMESTAMP_MS "${TIMESTAMP_US} / 1000" )
     #
-    set( ${OUTPUT_TIMESTAMP} ${TIMESTAMP_MS} PARENT_SCOPE )
+    set( ${OUTPUT_TIMESTAMP} "${TIMESTAMP_MS}" PARENT_SCOPE )
     #
 endfunction()
 
@@ -64,12 +64,12 @@ endfunction()
 function( cdrk_ensure_submodules )
     #
     find_package( Git REQUIRED )
-    set( CMD_WORK_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
+    set( CMD_WORK_DIR "${CMAKE_CURRENT_SOURCE_DIR}" )
     #
     # 0. Set a lock for parallel executions (.git may be a file, so ask git where it is).
     execute_process(
-            COMMAND ${GIT_EXECUTABLE} rev-parse --path-format=absolute --git-common-dir
-            WORKING_DIRECTORY ${CMD_WORK_DIR}
+            COMMAND "${GIT_EXECUTABLE}" rev-parse --path-format=absolute --git-common-dir
+            WORKING_DIRECTORY "${CMD_WORK_DIR}"
             OUTPUT_VARIABLE GIT_COMMON_DIR
             OUTPUT_STRIP_TRAILING_WHITESPACE
             COMMAND_ERROR_IS_FATAL ANY )
@@ -77,8 +77,8 @@ function( cdrk_ensure_submodules )
     #
     # 1. Fetch submodules status.
     execute_process(
-            COMMAND ${GIT_EXECUTABLE} submodule status
-            WORKING_DIRECTORY ${CMD_WORK_DIR}
+            COMMAND "${GIT_EXECUTABLE}" submodule status
+            WORKING_DIRECTORY "${CMD_WORK_DIR}"
             OUTPUT_VARIABLE SUBMODULE_STATUS
             OUTPUT_STRIP_TRAILING_WHITESPACE )
     #
@@ -91,8 +91,8 @@ function( cdrk_ensure_submodules )
         cdrk_ms_timestamp( T_START_MS )
         #
         execute_process(
-                COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                WORKING_DIRECTORY ${CMD_WORK_DIR}
+                COMMAND "${GIT_EXECUTABLE}" submodule update --init --recursive
+                WORKING_DIRECTORY "${CMD_WORK_DIR}"
                 RESULT_VARIABLE GIT_RESULT )
         #
         # ... if error result, halt cmake generation.
@@ -155,7 +155,7 @@ function( cdrk_generate_umbrella_header )
         #
     endforeach()
     #
-    get_filename_component( EXTENSION ${ARG_UMBRELLA_HEADER_NAME} EXT )
+    get_filename_component( EXTENSION "${ARG_UMBRELLA_HEADER_NAME}" EXT )
     if( NOT EXTENSION STREQUAL "" )
         #
         message( FATAL_ERROR "generate_umbrella_header: UMBRELLA_HEADER_NAME must not contain an extension (${ARG_UMBRELLA_HEADER_NAME})!" )
@@ -173,9 +173,9 @@ function( cdrk_generate_umbrella_header )
     # HEADER GENERATION
     # ========================================
     #
-    string( TOUPPER ${ARG_UMBRELLA_HEADER_NAME} HEADER_GUARD )
+    string( TOUPPER "${ARG_UMBRELLA_HEADER_NAME}" HEADER_GUARD )
     string( APPEND HEADER_GUARD _HPP )
-    set( UMBRELLA_HEADER_FILE ${ARG_UMBRELLA_HEADER_NAME}.hpp )
+    set( UMBRELLA_HEADER_FILE "${ARG_UMBRELLA_HEADER_NAME}.hpp" )
     #
     # Include guards.
     set( CONTENT "// UMBRELLA HEADER: auto-generated in cmake from globbed headers...\n\n" )
@@ -202,7 +202,7 @@ function( cdrk_generate_umbrella_header )
         #
         list( FILTER INCLUDE_FILE_PATHS EXCLUDE REGEX ".*/pch\\.hpp$" )
         list( GET PCH_FILE_PATHS 0 PCH_FILE_PATH )
-        file( RELATIVE_PATH REL_PATH ${ARG_INCLUDE_DIRECTORY} ${PCH_FILE_PATH} )
+        file( RELATIVE_PATH REL_PATH "${ARG_INCLUDE_DIRECTORY}" "${PCH_FILE_PATH}" )
         string( APPEND CONTENT "#include \"${REL_PATH}\"\n\n" )
         #
     endif()
@@ -210,16 +210,16 @@ function( cdrk_generate_umbrella_header )
     # Append remaining headers.
     foreach( INCLUDE_FILE_PATH ${INCLUDE_FILE_PATHS} )
         #
-        file( RELATIVE_PATH REL_PATH ${ARG_INCLUDE_DIRECTORY} ${INCLUDE_FILE_PATH} )
+        file( RELATIVE_PATH REL_PATH "${ARG_INCLUDE_DIRECTORY}" "${INCLUDE_FILE_PATH}" )
         string( APPEND CONTENT "#include \"${REL_PATH}\"\n" )
         #
     endforeach()
     #
     string( APPEND CONTENT "\n\n#endif //!${HEADER_GUARD}\n" )
     #
-    cmake_path( APPEND ARG_OUTPUT_DIRECTORY ${UMBRELLA_HEADER_FILE} OUTPUT_VARIABLE OUTPUT_FILE_PATH )
+    cmake_path( APPEND ARG_OUTPUT_DIRECTORY "${UMBRELLA_HEADER_FILE}" OUTPUT_VARIABLE OUTPUT_FILE_PATH )
     # Write only if changed, to avoid rebuilds on reconfigure.
-    file( CONFIGURE OUTPUT ${OUTPUT_FILE_PATH} CONTENT "${CONTENT}" @ONLY )
+    file( CONFIGURE OUTPUT "${OUTPUT_FILE_PATH}" CONTENT "${CONTENT}" @ONLY )
     #
     #
     # ========================================
@@ -262,7 +262,7 @@ function( _cdrk_target_configure_strict TARGET_NAME )
     # externally visible configuration, therefore they are private.
     #
     target_compile_options(
-            ${TARGET_NAME} PRIVATE
+            "${TARGET_NAME}" PRIVATE
             "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/W4;/WX;/permissive-;/w14062;/w14165;/w14242;/w14254;/w14263;/w14265;/w14287;/w14296;/w14311;/w14545;/w14546;/w14547;/w14549;/w14555;/w14619;/w14640;/w14826;/w14905;/w14906;/w14928;/fp:precise;/Zc:__cplusplus;/Zc:inline;/Zc:preprocessor>"
             "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-Wall;-Wextra;-Wpedantic;-Werror;-Wshadow;-Wnon-virtual-dtor;-Wold-style-cast;-Wcast-align;-Wunused;-Woverloaded-virtual;-Wconversion;-Wsign-conversion;-Wdouble-promotion;-Wformat=2;-Wno-unknown-pragmas>"
             ${ARG_UNPARSED_ARGUMENTS} )
@@ -302,13 +302,13 @@ function( _cdrk_target_configure_strict TARGET_NAME )
     endif()
     #
     target_compile_options(
-            ${TARGET_NAME} PUBLIC
+            "${TARGET_NAME}" PUBLIC
             "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:${_msvc_eh_flag};${_msvc_rtti_flag}>"
             "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:${_gnu_exception_flag};${_gnu_rtti_flag}>" )
     #
     # _HAS_EXCEPTIONS=0 must only be defined when exceptions are disabled.
     if( NOT ARG_ENABLE_EXCEPTIONS )
-        target_compile_definitions( ${TARGET_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:_HAS_EXCEPTIONS=0>" )
+        target_compile_definitions( "${TARGET_NAME}" PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:_HAS_EXCEPTIONS=0>" )
     endif()
     #
     message( STATUS "${TARGET_NAME}: strict compilation options applied (EXCEPTIONS=${ARG_ENABLE_EXCEPTIONS}, RTTI=${ARG_ENABLE_RTTI})." )
@@ -346,18 +346,18 @@ function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     # 2. Define the macro: empty for static, export while building, import for consumers.
     if( MODE STREQUAL "STATIC" )
         #
-        target_compile_definitions( ${TARGET_NAME} PUBLIC "${EXPORT_MACRO}=" )
+        target_compile_definitions( "${TARGET_NAME}" PUBLIC "${EXPORT_MACRO}=" )
         #
     elseif( MODE STREQUAL "BUILD" )
         #
-        target_compile_definitions( ${TARGET_NAME} PRIVATE "${EXPORT_MACRO}=${EXPORT_ATTRIBUTE}" )
-        set_target_properties( ${TARGET_NAME} PROPERTIES
+        target_compile_definitions( "${TARGET_NAME}" PRIVATE "${EXPORT_MACRO}=${EXPORT_ATTRIBUTE}" )
+        set_target_properties( "${TARGET_NAME}" PROPERTIES
                                CXX_VISIBILITY_PRESET hidden
                                VISIBILITY_INLINES_HIDDEN ON )
         #
     elseif( MODE STREQUAL "IMPORT" )
         #
-        target_compile_definitions( ${TARGET_NAME} INTERFACE "${EXPORT_MACRO}=${IMPORT_ATTRIBUTE}" )
+        target_compile_definitions( "${TARGET_NAME}" INTERFACE "${EXPORT_MACRO}=${IMPORT_ATTRIBUTE}" )
         #
     else()
         #
@@ -378,20 +378,20 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LI
     #
     if( LIB_TYPE STREQUAL "STATIC" )
         #
-        add_library( ${TARGET_NAME} STATIC )
-        _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} STATIC )
+        add_library( "${TARGET_NAME}" STATIC )
+        _cdrk_target_export_api( "${TARGET_NAME}" "${EXPORT_MACRO}" STATIC )
         #
-        set( SOURCE_TARGET ${TARGET_NAME} )
-        set( LINK_TARGETS ${TARGET_NAME} )
+        set( SOURCE_TARGET "${TARGET_NAME}" )
+        set( LINK_TARGETS "${TARGET_NAME}" )
         #
     elseif( LIB_TYPE STREQUAL "SHARED" )
         #
-        add_library( ${TARGET_NAME} SHARED )
-        _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} BUILD )
-        _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} IMPORT )
+        add_library( "${TARGET_NAME}" SHARED )
+        _cdrk_target_export_api( "${TARGET_NAME}" "${EXPORT_MACRO}" BUILD )
+        _cdrk_target_export_api( "${TARGET_NAME}" "${EXPORT_MACRO}" IMPORT )
         #
-        set( SOURCE_TARGET ${TARGET_NAME} )
-        set( LINK_TARGETS ${TARGET_NAME} )
+        set( SOURCE_TARGET "${TARGET_NAME}" )
+        set( LINK_TARGETS "${TARGET_NAME}" )
         #
     elseif( LIB_TYPE STREQUAL "LIBRARY" )
         #
@@ -400,28 +400,28 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LI
         #
         # The object library compiles the sources once for both the static and shared libraries,
         # so users can link to either without building twice. PIC is needed by the shared one.
-        add_library( ${OBJECT_TARGET} OBJECT )
-        set_target_properties( ${OBJECT_TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON )
-        _cdrk_target_export_api( ${OBJECT_TARGET} ${EXPORT_MACRO} BUILD )
+        add_library( "${OBJECT_TARGET}" OBJECT )
+        set_target_properties( "${OBJECT_TARGET}" PROPERTIES POSITION_INDEPENDENT_CODE ON )
+        _cdrk_target_export_api( "${OBJECT_TARGET}" "${EXPORT_MACRO}" BUILD )
         #
         # Add static/shared library targets and link them against object.
-        add_library( ${STATIC_TARGET} STATIC )
-        target_link_libraries( ${STATIC_TARGET} PUBLIC ${OBJECT_TARGET} )
-        _cdrk_target_export_api( ${STATIC_TARGET} ${EXPORT_MACRO} STATIC )
+        add_library( "${STATIC_TARGET}" STATIC )
+        target_link_libraries( "${STATIC_TARGET}" PUBLIC "${OBJECT_TARGET}" )
+        _cdrk_target_export_api( "${STATIC_TARGET}" "${EXPORT_MACRO}" STATIC )
         #
-        add_library( ${TARGET_NAME} SHARED )
-        target_link_libraries( ${TARGET_NAME} PUBLIC ${OBJECT_TARGET} )
-        _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} IMPORT )
+        add_library( "${TARGET_NAME}" SHARED )
+        target_link_libraries( "${TARGET_NAME}" PUBLIC "${OBJECT_TARGET}" )
+        _cdrk_target_export_api( "${TARGET_NAME}" "${EXPORT_MACRO}" IMPORT )
         #
         # Both share the output name, except on Windows where the static and import libraries would clash as <name>.lib.
         if( NOT WIN32 )
             #
-            set_target_properties( ${STATIC_TARGET} PROPERTIES OUTPUT_NAME ${TARGET_NAME} )
+            set_target_properties( "${STATIC_TARGET}" PROPERTIES OUTPUT_NAME "${TARGET_NAME}" )
             #
         endif()
         #
-        set( SOURCE_TARGET ${OBJECT_TARGET} )
-        set( LINK_TARGETS ${TARGET_NAME} ${STATIC_TARGET} )
+        set( SOURCE_TARGET "${OBJECT_TARGET}" )
+        set( LINK_TARGETS "${TARGET_NAME}" "${STATIC_TARGET}" )
         #
     else()
         #
@@ -429,7 +429,7 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LI
         #
     endif()
     #
-    set( ${OUT_SOURCE_TARGET} ${SOURCE_TARGET} PARENT_SCOPE )
+    set( ${OUT_SOURCE_TARGET} "${SOURCE_TARGET}" PARENT_SCOPE )
     set( ${OUT_LINK_TARGETS} ${LINK_TARGETS} PARENT_SCOPE )
     #
 endfunction()
@@ -448,8 +448,9 @@ endfunction()
 # STATIC/SHARED:      a single library of that type.
 # LIBRARY:            both, sources compiled once; the static one is <namespace>::<MODULE_NAME>-static.
 # Libraries define <NAMESPACE>_<MODULE_NAME>_EXPORT (upper case) to mark exported symbols.
-# INCLUDE_DIRECTORY:  public headers, defaults to ${CMAKE_CURRENT_SOURCE_DIR}/include or .../import.
-# SOURCE_DIRECTORY:   private headers, default ${CMAKE_CURRENT_SOURCE_DIR}/source.
+# INCLUDE_DIRECTORY:  add directory to module target. if <MODULE_TYPE> is a library type, this is set
+#                     as public directory.
+# SOURCE_DIRECTORY:   add directory to module target, strictly private.
 # STRICT:             applies strict compilation options with their defaults.
 # STRICT_ARGS:        applies strict compilation options with these arguments
 #                     (ENABLE_EXCEPTIONS, ENABLE_RTTI, extra compile options).
@@ -516,7 +517,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     elseif( MODULE_TYPE MATCHES "^(STATIC|SHARED|LIBRARY)$" )
         #
-        _cdrk_add_library_target( ${MODULE_TYPE} "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
+        _cdrk_add_library_target( "${MODULE_TYPE}" "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
         #
     else()
         #
@@ -529,7 +530,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
     string( LENGTH "${TARGET_NAME}" TARGET_NAME_LENGTH )
     foreach( MODULE_TARGET IN LISTS LINK_TARGETS SOURCE_TARGET )
         #
-        string( SUBSTRING "${MODULE_TARGET}" ${TARGET_NAME_LENGTH} -1 SUFFIX )
+        string( SUBSTRING "${MODULE_TARGET}" "${TARGET_NAME_LENGTH}" -1 SUFFIX )
         set_target_properties( "${MODULE_TARGET}" PROPERTIES EXPORT_NAME "${MODULE_NAME}${SUFFIX}" )
         #
         if( ALIAS_NAME AND MODULE_TARGET IN_LIST LINK_TARGETS AND NOT TARGET "${ALIAS_NAME}${SUFFIX}" )
@@ -548,19 +549,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endforeach()
     #
-    # 5. Configure the target that compiles the sources and...
-    target_include_directories( "${SOURCE_TARGET}"
-                                PUBLIC "$<BUILD_INTERFACE:${ARG_INCLUDE_DIRECTORY}>"
-                                PRIVATE "${ARG_SOURCE_DIRECTORY}" )
-    #
-    # ... if args ask for it, apply strict options.
-    if( ARG_STRICT )
-        #
-        _cdrk_target_configure_strict( "${SOURCE_TARGET}" ${ARG_STRICT_ARGS} )
-        #
-    endif()
-    #
-    # 6. Remember the module layout for cdrk_module_sources. Executables have no consumers,
+    # 5. Remember the module layout for cdrk_module_sources. Executables have no consumers,
     #    so their file sets stay private.
     if( MODULE_TYPE STREQUAL "EXECUTABLE" )
         #
@@ -569,6 +558,18 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
     else()
         #
         set( FILE_SET_SCOPE PUBLIC )
+        #
+    endif()
+    #
+    # 6. Configure the target that compiles the sources and...
+    target_include_directories( "${SOURCE_TARGET}"
+                                "${FILE_SET_SCOPE}" "$<BUILD_INTERFACE:${ARG_INCLUDE_DIRECTORY}>"
+                                PRIVATE "${ARG_SOURCE_DIRECTORY}" )
+    #
+    # ... if args ask for it, apply strict options.
+    if( ARG_STRICT )
+        #
+        _cdrk_target_configure_strict( "${SOURCE_TARGET}" ${ARG_STRICT_ARGS} )
         #
     endif()
     #
@@ -668,7 +669,7 @@ function( _cdrk_target_add_file_set TARGET_NAME SCOPE TYPE BASE_DIRECTORY )
     #
     if( FILES )
         #
-        target_sources( "${TARGET_NAME}" ${SCOPE} FILE_SET ${TYPE} BASE_DIRS "${BASE_DIRECTORY}" FILES ${FILES} )
+        target_sources( "${TARGET_NAME}" "${SCOPE}" FILE_SET "${TYPE}" BASE_DIRS "${BASE_DIRECTORY}" FILES ${FILES} )
         #
     endif()
     #
@@ -778,8 +779,8 @@ function( cdrk_module_sources TARGET )
         #
     endif()
     #
-    _cdrk_target_add_file_set( "${SOURCE_TARGET}" ${FILE_SET_SCOPE} HEADERS "${INCLUDE_DIRECTORY}" ${HEADER_FILES} )
-    _cdrk_target_add_file_set( "${SOURCE_TARGET}" ${FILE_SET_SCOPE} CXX_MODULES "${INCLUDE_DIRECTORY}" ${MODULE_FILES} )
+    _cdrk_target_add_file_set( "${SOURCE_TARGET}" "${FILE_SET_SCOPE}" HEADERS "${INCLUDE_DIRECTORY}" ${HEADER_FILES} )
+    _cdrk_target_add_file_set( "${SOURCE_TARGET}" "${FILE_SET_SCOPE}" CXX_MODULES "${INCLUDE_DIRECTORY}" ${MODULE_FILES} )
     if( MODULE_FILES )
         #
         set_source_files_properties( ${MODULE_FILES} TARGET_DIRECTORY "${SOURCE_TARGET}" PROPERTIES SKIP_PRECOMPILE_HEADERS ON )
@@ -879,7 +880,7 @@ function( _cdrk_check_for_updates )
     endif()
     #
     # 2. Compare with the loaded version.
-    if( DEFINED CACHE{_CDRK_LATEST_VERSION} AND CDRK_VERSION VERSION_LESS $CACHE{_CDRK_LATEST_VERSION} )
+    if( DEFINED CACHE{_CDRK_LATEST_VERSION} AND CDRK_VERSION VERSION_LESS "$CACHE{_CDRK_LATEST_VERSION}" )
         #
         if( CDRK_SINGLE_FILE )
             #
