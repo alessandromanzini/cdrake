@@ -475,19 +475,6 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endif()
     #
-    # Default directories, unless given through args.
-    if( NOT DEFINED ARG_INCLUDE_DIRECTORY )
-        #
-        set( ARG_INCLUDE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include" )
-        #
-    endif()
-    #
-    if( NOT DEFINED ARG_SOURCE_DIRECTORY )
-        #
-        set( ARG_SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/source" )
-        #
-    endif()
-    #
     # 2. Name the target, namespaced only if the project defines a namespace.
     if( DEFINED "${PROJECT_NAME}_NAMESPACE" )
         #
