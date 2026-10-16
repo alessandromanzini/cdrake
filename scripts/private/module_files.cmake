@@ -75,7 +75,7 @@ function( _cdrk_target_add_file_set TARGET_NAME SCOPE TYPE BASE_DIRECTORY )
     #
     if( FILES )
         #
-        target_sources( "${TARGET_NAME}" ${SCOPE} FILE_SET ${TYPE} BASE_DIRS "${BASE_DIRECTORY}" FILES ${FILES} )
+        target_sources( "${TARGET_NAME}" "${SCOPE}" FILE_SET "${TYPE}" BASE_DIRS "${BASE_DIRECTORY}" FILES ${FILES} )
         #
     endif()
     #

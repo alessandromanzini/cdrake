@@ -10,6 +10,6 @@ function( cdrk_ms_timestamp OUTPUT_TIMESTAMP )
     string( TIMESTAMP TIMESTAMP_US "%s%f" UTC )
     math( EXPR TIMESTAMP_MS "${TIMESTAMP_US} / 1000" )
     #
-    set( ${OUTPUT_TIMESTAMP} ${TIMESTAMP_MS} PARENT_SCOPE )
+    set( ${OUTPUT_TIMESTAMP} "${TIMESTAMP_MS}" PARENT_SCOPE )
     #
 endfunction()
