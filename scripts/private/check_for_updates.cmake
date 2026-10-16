@@ -61,7 +61,7 @@ function( _cdrk_check_for_updates )
         #
         if( CDRK_SINGLE_FILE )
             #
-            set( UPDATE_HINT "download https://raw.githubusercontent.com/${CDRK_REPOSITORY}/main/single_file/CDrake.cmake" )
+            set( UPDATE_HINT "download https://raw.githubusercontent.com/${CDRK_REPOSITORY}/main/single_file/cdrake.cmake" )
             #
         else()
             #
