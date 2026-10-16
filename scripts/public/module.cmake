@@ -13,8 +13,9 @@ include( "${CMAKE_CURRENT_LIST_DIR}/../private/add_library_target.cmake" )
 #              [STRICT | STRICT_ARGS <arg>...] )
 #
 # Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
-# <namespace> is read from ${PROJECT_NAME}_NAMESPACE or defaulted to <MODULE_NAME>. The
-# target name is returned in MODULE_TARGET_NAME.
+# <namespace> is read from ${PROJECT_NAME}_NAMESPACE. If no namespace is defined, the
+# target is defined as <MODULE_NAME> with no alias. The complete target name is returned
+# in MODULE_TARGET_NAME on the parent scope.
 # EXECUTABLE:         an executable, runtime DLLs are copied next to it on Windows.
 # STATIC/SHARED:      a single library of that type.
 # LIBRARY:            both, sources compiled once; the static one is <namespace>::<MODULE_NAME>-static.
@@ -44,11 +45,15 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
     #
     if( NOT DEFINED "${PROJECT_NAME}_NAMESPACE" )
         #
-        set( MODULE_NAMESPACE "${MODULE_NAME}" )
+        set( MODULE_NAMESPACE "" )
+        set( TARGET_NAME "${MODULE_NAME}" )
+        set( ALIAS_NAME "::${MODULE_NAME}" )
         #
     else()
         #
         set( MODULE_NAMESPACE "${${PROJECT_NAME}_NAMESPACE}" )
+        set( TARGET_NAME "${MODULE_NAMESPACE}_${MODULE_NAME}" )
+        set( ALIAS_NAME "${MODULE_NAMESPACE}::${MODULE_NAME}" )
         #
     endif( )
     #
@@ -66,9 +71,6 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
     endif()
     #
     # 2. Add the module target.
-    set( TARGET_NAME "${MODULE_NAMESPACE}_${MODULE_NAME}" )
-    set( ALIAS_NAME "${MODULE_NAMESPACE}::${MODULE_NAME}" )
-    #
     if( MODULE_TYPE STREQUAL "EXECUTABLE" )
         #
         add_executable( "${TARGET_NAME}" ${ARG_SOURCES} )
