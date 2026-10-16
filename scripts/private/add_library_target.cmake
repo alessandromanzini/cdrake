@@ -47,66 +47,61 @@ function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     #
 endfunction()
 
-# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <ALIAS_NAME> <OUT_SOURCE_TARGET> [<source>...] )
+# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <OUT_SOURCE_TARGET> <OUT_LINK_TARGETS> )
 #
-# Adds the library targets and aliases, see cdrk_module. OUT_SOURCE_TARGET receives the target
-# compiling the sources (the object library for LIBRARY), where compile settings belong.
-function( _cdrk_add_library_target LIB_TYPE TARGET_NAME ALIAS_NAME OUT_SOURCE_TARGET )
-    #
-    set( SOURCE_FILES ${ARGN} )
+# Adds the library targets, see cdrk_module. OUT_SOURCE_TARGET receives the target compiling
+# the sources (the object library for LIBRARY), OUT_LINK_TARGETS the targets to link against.
+function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LINK_TARGETS )
     #
     string( TOUPPER "${TARGET_NAME}_EXPORT" EXPORT_MACRO )
     string( MAKE_C_IDENTIFIER "${EXPORT_MACRO}" EXPORT_MACRO )
     #
     if( LIB_TYPE STREQUAL "STATIC" )
         #
-        # Add static library only.
-        add_library( ${TARGET_NAME} STATIC ${SOURCE_FILES} )
-        add_library( ${ALIAS_NAME} ALIAS ${TARGET_NAME} )
+        add_library( ${TARGET_NAME} STATIC )
         _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} STATIC )
         #
         set( SOURCE_TARGET ${TARGET_NAME} )
+        set( LINK_TARGETS ${TARGET_NAME} )
         #
     elseif( LIB_TYPE STREQUAL "SHARED" )
         #
-        # Add shared library only.
-        add_library( ${TARGET_NAME} SHARED ${SOURCE_FILES} )
-        add_library( ${ALIAS_NAME} ALIAS ${TARGET_NAME} )
+        add_library( ${TARGET_NAME} SHARED )
         _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} BUILD )
         _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} IMPORT )
         #
         set( SOURCE_TARGET ${TARGET_NAME} )
+        set( LINK_TARGETS ${TARGET_NAME} )
         #
     elseif( LIB_TYPE STREQUAL "LIBRARY" )
         #
         set( OBJECT_TARGET "${TARGET_NAME}-object" )
         set( STATIC_TARGET "${TARGET_NAME}-static" )
         #
-        # Add the object library with the sources, PIC since it is linked into the shared one.
-        add_library( ${OBJECT_TARGET} OBJECT ${SOURCE_FILES} )
+        # The object library compiles the sources once for both the static and shared libraries,
+        # so users can link to either without building twice. PIC is needed by the shared one.
+        add_library( ${OBJECT_TARGET} OBJECT )
         set_target_properties( ${OBJECT_TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON )
         _cdrk_target_export_api( ${OBJECT_TARGET} ${EXPORT_MACRO} BUILD )
         #
         # Add static/shared library targets and link them against object.
         add_library( ${STATIC_TARGET} STATIC )
-        add_library( "${ALIAS_NAME}-static" ALIAS ${STATIC_TARGET} )
         target_link_libraries( ${STATIC_TARGET} PUBLIC ${OBJECT_TARGET} )
-        set_target_properties( ${STATIC_TARGET} PROPERTIES OUTPUT_NAME ${TARGET_NAME} )
         _cdrk_target_export_api( ${STATIC_TARGET} ${EXPORT_MACRO} STATIC )
         #
         add_library( ${TARGET_NAME} SHARED )
-        add_library( ${ALIAS_NAME} ALIAS ${TARGET_NAME} )
         target_link_libraries( ${TARGET_NAME} PUBLIC ${OBJECT_TARGET} )
         _cdrk_target_export_api( ${TARGET_NAME} ${EXPORT_MACRO} IMPORT )
         #
-        # On Windows the static and import libraries would both be named <name>.lib.
-        if( WIN32 )
+        # Both share the output name, except on Windows where the static and import libraries would clash as <name>.lib.
+        if( NOT WIN32 )
             #
-            set_target_properties( ${STATIC_TARGET} PROPERTIES OUTPUT_NAME "${TARGET_NAME}-static" )
+            set_target_properties( ${STATIC_TARGET} PROPERTIES OUTPUT_NAME ${TARGET_NAME} )
             #
         endif()
         #
         set( SOURCE_TARGET ${OBJECT_TARGET} )
+        set( LINK_TARGETS ${TARGET_NAME} ${STATIC_TARGET} )
         #
     else()
         #
@@ -115,5 +110,6 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME ALIAS_NAME OUT_SOURCE_TA
     endif()
     #
     set( ${OUT_SOURCE_TARGET} ${SOURCE_TARGET} PARENT_SCOPE )
+    set( ${OUT_LINK_TARGETS} ${LINK_TARGETS} PARENT_SCOPE )
     #
 endfunction()
