@@ -13,7 +13,8 @@ include( "${CMAKE_CURRENT_LIST_DIR}/../private/add_library_target.cmake" )
 #              [STRICT [STRICT_ARGS <arg>...]] )
 #
 # Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
-# <namespace> is read from ${PROJECT_NAME}_NAMESPACE. The target name is returned in MODULE_TARGET_NAME.
+# <namespace> is read from ${PROJECT_NAME}_NAMESPACE or defaulted to <MODULE_NAME>. The
+# target name is returned in MODULE_TARGET_NAME.
 # EXECUTABLE:         an executable, runtime DLLs are copied next to it on Windows.
 # STATIC/SHARED:      a single library of that type.
 # LIBRARY:            both, sources compiled once; the static one is <namespace>::<MODULE_NAME>-static.
@@ -41,11 +42,13 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
     #
     if( NOT DEFINED "${PROJECT_NAME}_NAMESPACE" )
         #
-        message( FATAL_ERROR "${PROJECT_NAME}_NAMESPACE is not found!" )
+        set( MODULE_NAMESPACE "${MODULE_NAME}" )
         #
-    endif()
-    #
-    set( MODULE_NAMESPACE "${${PROJECT_NAME}_NAMESPACE}" )
+    else()
+        #
+        set( MODULE_NAMESPACE "${${PROJECT_NAME}_NAMESPACE}" )
+        #
+    endif( )
     #
     # Default directories, unless given through args.
     if( NOT DEFINED ARG_INCLUDE_DIRECTORY )
