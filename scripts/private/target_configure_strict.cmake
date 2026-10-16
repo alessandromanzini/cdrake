@@ -1,16 +1,16 @@
 include_guard( GLOBAL )
 
-# _cdrk_target_configure_strict( <TARGET_NAME> [ENABLE_EXCEPTIONS <bool>] [ENABLE_RTTI <bool>] [<option>...] )
+# _cdrk_target_configure_strict( <TARGET_NAME> [ENABLE_EXCEPTIONS] [ENABLE_RTTI] [<option>...] )
 #
 # Enables warnings as errors on TARGET_NAME and disables exceptions and RTTI unless enabled.
 # Any other argument is added as a private compile option.
 function( _cdrk_target_configure_strict TARGET_NAME )
     #
     # --- Argument parsing -----------------------------------------------
-    # ENABLE_EXCEPTIONS / ENABLE_RTTI: opt-in switches, both default OFF.
+    # ENABLE_EXCEPTIONS / ENABLE_RTTI: opt-in flags, both OFF unless given.
     # PARSE_ARGV skips TARGET_NAME (index 1).
     #
-    cmake_parse_arguments( PARSE_ARGV 1 ARG "" "ENABLE_EXCEPTIONS;ENABLE_RTTI" "" )
+    cmake_parse_arguments( PARSE_ARGV 1 ARG "ENABLE_EXCEPTIONS;ENABLE_RTTI" "" "" )
     #
     # --- Diagnostics flags --------------------------------------------
     # PRIVATE: these only affect how *this* target is compiled, not its
@@ -32,11 +32,13 @@ function( _cdrk_target_configure_strict TARGET_NAME )
         #
         set( _msvc_eh_flag "/EHsc" )
         set( _gnu_exception_flag "-fexceptions" )
+        set( ARG_ENABLE_EXCEPTIONS ON )
         #
     else()
         #
         set( _msvc_eh_flag "/EHs-c-" )
         set( _gnu_exception_flag "-fno-exceptions" )
+        set( ARG_ENABLE_EXCEPTIONS OFF )
         #
     endif()
     #
@@ -44,11 +46,13 @@ function( _cdrk_target_configure_strict TARGET_NAME )
         #
         set( _msvc_rtti_flag "/GR" )
         set( _gnu_rtti_flag "-frtti" )
+        set( ARG_ENABLE_RTTI ON )
         #
     else()
         #
         set( _msvc_rtti_flag "/GR-" )
         set( _gnu_rtti_flag "-fno-rtti" )
+        set( ARG_ENABLE_RTTI OFF )
         #
     endif()
     #

@@ -245,17 +245,17 @@ endfunction()
 # scripts/private/target_configure_strict.cmake
 # ----------------------------------------
 #
-# _cdrk_target_configure_strict( <TARGET_NAME> [ENABLE_EXCEPTIONS <bool>] [ENABLE_RTTI <bool>] [<option>...] )
+# _cdrk_target_configure_strict( <TARGET_NAME> [ENABLE_EXCEPTIONS] [ENABLE_RTTI] [<option>...] )
 #
 # Enables warnings as errors on TARGET_NAME and disables exceptions and RTTI unless enabled.
 # Any other argument is added as a private compile option.
 function( _cdrk_target_configure_strict TARGET_NAME )
     #
     # --- Argument parsing -----------------------------------------------
-    # ENABLE_EXCEPTIONS / ENABLE_RTTI: opt-in switches, both default OFF.
+    # ENABLE_EXCEPTIONS / ENABLE_RTTI: opt-in flags, both OFF unless given.
     # PARSE_ARGV skips TARGET_NAME (index 1).
     #
-    cmake_parse_arguments( PARSE_ARGV 1 ARG "" "ENABLE_EXCEPTIONS;ENABLE_RTTI" "" )
+    cmake_parse_arguments( PARSE_ARGV 1 ARG "ENABLE_EXCEPTIONS;ENABLE_RTTI" "" "" )
     #
     # --- Diagnostics flags --------------------------------------------
     # PRIVATE: these only affect how *this* target is compiled, not its
@@ -277,11 +277,13 @@ function( _cdrk_target_configure_strict TARGET_NAME )
         #
         set( _msvc_eh_flag "/EHsc" )
         set( _gnu_exception_flag "-fexceptions" )
+        set( ARG_ENABLE_EXCEPTIONS ON )
         #
     else()
         #
         set( _msvc_eh_flag "/EHs-c-" )
         set( _gnu_exception_flag "-fno-exceptions" )
+        set( ARG_ENABLE_EXCEPTIONS OFF )
         #
     endif()
     #
@@ -289,11 +291,13 @@ function( _cdrk_target_configure_strict TARGET_NAME )
         #
         set( _msvc_rtti_flag "/GR" )
         set( _gnu_rtti_flag "-frtti" )
+        set( ARG_ENABLE_RTTI ON )
         #
     else()
         #
         set( _msvc_rtti_flag "/GR-" )
         set( _gnu_rtti_flag "-fno-rtti" )
+        set( ARG_ENABLE_RTTI OFF )
         #
     endif()
     #
@@ -439,7 +443,7 @@ endfunction()
 #              [SOURCES <file>...]
 #              [INCLUDE_DIRECTORY <dir>]
 #              [SOURCE_DIRECTORY <dir>]
-#              [STRICT [STRICT_ARGS <arg>...]] )
+#              [STRICT | STRICT_ARGS <arg>...] )
 #
 # Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
 # <namespace> is read from ${PROJECT_NAME}_NAMESPACE or defaulted to <MODULE_NAME>. The
@@ -450,8 +454,9 @@ endfunction()
 # Libraries define <NAMESPACE>_<MODULE_NAME>_EXPORT (upper case) to mark exported symbols.
 # INCLUDE_DIRECTORY:  public headers, default ${CMAKE_CURRENT_SOURCE_DIR}/include.
 # SOURCE_DIRECTORY:   private headers, default ${CMAKE_CURRENT_SOURCE_DIR}/source.
-# STRICT:             applies strict compilation options; STRICT_ARGS are forwarded to them
-#                     (ENABLE_EXCEPTIONS <bool>, ENABLE_RTTI <bool>, extra compile options).
+# STRICT:             applies strict compilation options with their defaults.
+# STRICT_ARGS:        applies strict compilation options with these arguments
+#                     (ENABLE_EXCEPTIONS, ENABLE_RTTI, extra compile options).
 function( cdrk_module MODULE_NAME MODULE_TYPE )
     #
     # 1. Parse and validate arguments.
@@ -463,9 +468,10 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endif()
     #
-    if( ARG_STRICT_ARGS AND NOT ARG_STRICT )
+    # STRICT_ARGS implies STRICT, even if left empty.
+    if( DEFINED ARG_STRICT_ARGS OR "STRICT_ARGS" IN_LIST ARG_KEYWORDS_MISSING_VALUES )
         #
-        message( FATAL_ERROR "cdrk_module: STRICT_ARGS given without STRICT!" )
+        set( ARG_STRICT ON )
         #
     endif()
     #
