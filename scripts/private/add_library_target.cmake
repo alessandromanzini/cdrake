@@ -1,5 +1,9 @@
 include_guard( GLOBAL )
 
+# _cdrk_target_export_api( <TARGET_NAME> <EXPORT_MACRO> <STATIC|BUILD|IMPORT> )
+#
+# Defines EXPORT_MACRO on TARGET_NAME: empty for STATIC, symbol export while compiling
+# the target for BUILD, symbol import for its consumers for IMPORT.
 function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     #
     # 1. Pick the export/import attributes for the current platform.
@@ -43,6 +47,10 @@ function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     #
 endfunction()
 
+# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <ALIAS_NAME> <OUT_SOURCE_TARGET> [<source>...] )
+#
+# Adds the library targets and aliases, see cdrk_module. OUT_SOURCE_TARGET receives the target
+# compiling the sources (the object library for LIBRARY), where compile settings belong.
 function( _cdrk_add_library_target LIB_TYPE TARGET_NAME ALIAS_NAME OUT_SOURCE_TARGET )
     #
     set( SOURCE_FILES ${ARGN} )

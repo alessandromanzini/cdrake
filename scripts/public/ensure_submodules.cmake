@@ -2,6 +2,11 @@ include_guard( GLOBAL )
 
 include( "${CMAKE_CURRENT_LIST_DIR}/ms_timestamp.cmake" )
 
+# cdrk_ensure_submodules()
+#
+# Initializes the git submodules of the current source directory, recursively, if any
+# is not initialized yet. Warns if any submodule is out of sync with the recorded commit.
+# Safe to call from parallel configures, as a lock is held in the git directory.
 function( cdrk_ensure_submodules )
     #
     find_package( Git REQUIRED )
