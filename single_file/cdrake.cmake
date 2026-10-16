@@ -18,7 +18,7 @@ cmake_minimum_required( VERSION 3.29 )
 #
 set( CDRK_VERSION_MAJOR 1 )
 set( CDRK_VERSION_MINOR 3 )
-set( CDRK_VERSION_PATCH 0 )
+set( CDRK_VERSION_PATCH 1 )
 set( CDRK_VERSION "${CDRK_VERSION_MAJOR}.${CDRK_VERSION_MINOR}.${CDRK_VERSION_PATCH}" )
 #
 set( CDRK_REPOSITORY "alessandromanzini/cdrake" )
@@ -442,12 +442,15 @@ endfunction()
 #
 # Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
 # <namespace> is read from ${PROJECT_NAME}_NAMESPACE. If no namespace is defined, the
-# target is defined as <MODULE_NAME> with no alias. The complete target name is returned
-# in MODULE_TARGET_NAME on the parent scope. Sources are added with cdrk_module_sources.
+# target is defined as <MODULE_NAME> with no alias.
+# The complete target name is returned in <MODULE_TARGET_NAME> on the parent scope. Same
+# goes for directory paths to <MODULE_INC_DIR> and <MODULE_SRC_DIR>.
+# Sources can be added with cdrk_module_sources.
+#
 # EXECUTABLE:         an executable, runtime DLLs are copied next to it on Windows.
 # STATIC/SHARED:      a single library of that type.
 # LIBRARY:            both, sources compiled once; the static one is <namespace>::<MODULE_NAME>-static.
-# Libraries define <NAMESPACE>_<MODULE_NAME>_EXPORT (upper case) to mark exported symbols.
+#                     Libraries define <NAMESPACE>_<MODULE_NAME>_EXPORT (upper case) to mark exported symbols.
 # INCLUDE_DIRECTORY:  add directory to module target. if <MODULE_TYPE> is a library type, this is set
 #                     as public directory.
 # SOURCE_DIRECTORY:   add directory to module target, strictly private.
@@ -581,6 +584,8 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
                            _CDRK_SOURCE_DIRECTORY "${ARG_SOURCE_DIRECTORY}" )
     #
     set( MODULE_TARGET_NAME "${TARGET_NAME}" PARENT_SCOPE )
+    set( MODULE_INC_DIR "${ARG_INCLUDE_DIRECTORY}" PARENT_SCOPE )
+    set( MODULE_SRC_DIR "${ARG_SOURCE_DIRECTORY}" PARENT_SCOPE )
     #
 endfunction()
 
