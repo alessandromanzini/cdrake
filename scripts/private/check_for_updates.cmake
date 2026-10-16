@@ -1,5 +1,9 @@
 include_guard( GLOBAL )
 
+# _cdrk_check_for_updates()
+#
+# Warns if the latest CDrake on GitHub is newer than the loaded one. The remote version is
+# fetched at most once a day and cached. Disabled by setting CDRK_CHECK_FOR_UPDATES to OFF.
 function( _cdrk_check_for_updates )
     #
     if( NOT CDRK_CHECK_FOR_UPDATES )

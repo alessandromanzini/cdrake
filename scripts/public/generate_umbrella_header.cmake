@@ -2,6 +2,17 @@ include_guard( GLOBAL )
 
 include( "${CMAKE_CURRENT_LIST_DIR}/ms_timestamp.cmake" )
 
+# cdrk_generate_umbrella_header( UMBRELLA_HEADER_NAME <name>
+#                                INCLUDE_DIRECTORY <dir>
+#                                OUTPUT_DIRECTORY <dir>
+#                                [EXCEPTION_REGEX <regex>...] )
+#
+# Writes <OUTPUT_DIRECTORY>/<name>.hpp including every .hpp under INCLUDE_DIRECTORY, sorted,
+# with paths relative to it. A pch.hpp, if found, is included first.
+# UMBRELLA_HEADER_NAME:  header name without extension, also used for the include guard.
+# INCLUDE_DIRECTORY:     absolute path of the headers to glob.
+# OUTPUT_DIRECTORY:      where the umbrella header is written.
+# EXCEPTION_REGEX:       headers matching any of these are left out.
 function( cdrk_generate_umbrella_header )
     #
     cdrk_ms_timestamp( T_START_MS )

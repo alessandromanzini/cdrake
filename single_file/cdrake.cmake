@@ -41,6 +41,10 @@ option( CDRK_CHECK_FOR_UPDATES "Check GitHub for a newer CDrake version, once a 
 # scripts/public/ms_timestamp.cmake
 # ----------------------------------------
 #
+# cdrk_ms_timestamp( <OUTPUT_TIMESTAMP> )
+#
+# Stores the current time in milliseconds since epoch in OUTPUT_TIMESTAMP.
+# Useful to time configure steps: take two timestamps and subtract them.
 function( cdrk_ms_timestamp OUTPUT_TIMESTAMP )
     #
     # Seconds followed by microseconds, in a single call so they come from the same instant.
@@ -52,6 +56,11 @@ function( cdrk_ms_timestamp OUTPUT_TIMESTAMP )
 endfunction()
 
 
+# cdrk_ensure_submodules()
+#
+# Initializes the git submodules of the current source directory, recursively, if any
+# is not initialized yet. Warns if any submodule is out of sync with the recorded commit.
+# Safe to call from parallel configures, as a lock is held in the git directory.
 function( cdrk_ensure_submodules )
     #
     find_package( Git REQUIRED )
@@ -116,6 +125,17 @@ endfunction()
 # ----------------------------------------
 #
 
+# cdrk_generate_umbrella_header( UMBRELLA_HEADER_NAME <name>
+#                                INCLUDE_DIRECTORY <dir>
+#                                OUTPUT_DIRECTORY <dir>
+#                                [EXCEPTION_REGEX <regex>...] )
+#
+# Writes <OUTPUT_DIRECTORY>/<name>.hpp including every .hpp under INCLUDE_DIRECTORY, sorted,
+# with paths relative to it. A pch.hpp, if found, is included first.
+# UMBRELLA_HEADER_NAME:  header name without extension, also used for the include guard.
+# INCLUDE_DIRECTORY:     absolute path of the headers to glob.
+# OUTPUT_DIRECTORY:      where the umbrella header is written.
+# EXCEPTION_REGEX:       headers matching any of these are left out.
 function( cdrk_generate_umbrella_header )
     #
     cdrk_ms_timestamp( T_START_MS )
@@ -225,6 +245,10 @@ endfunction()
 # scripts/private/target_configure_strict.cmake
 # ----------------------------------------
 #
+# _cdrk_target_configure_strict( <TARGET_NAME> [ENABLE_EXCEPTIONS <bool>] [ENABLE_RTTI <bool>] [<option>...] )
+#
+# Enables warnings as errors on TARGET_NAME and disables exceptions and RTTI unless enabled.
+# Any other argument is added as a private compile option.
 function( _cdrk_target_configure_strict TARGET_NAME )
     #
     # --- Argument parsing -----------------------------------------------
@@ -292,6 +316,10 @@ endfunction()
 # scripts/private/add_library_target.cmake
 # ----------------------------------------
 #
+# _cdrk_target_export_api( <TARGET_NAME> <EXPORT_MACRO> <STATIC|BUILD|IMPORT> )
+#
+# Defines EXPORT_MACRO on TARGET_NAME: empty for STATIC, symbol export while compiling
+# the target for BUILD, symbol import for its consumers for IMPORT.
 function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     #
     # 1. Pick the export/import attributes for the current platform.
@@ -335,6 +363,10 @@ function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     #
 endfunction()
 
+# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <ALIAS_NAME> <OUT_SOURCE_TARGET> [<source>...] )
+#
+# Adds the library targets and aliases, see cdrk_module. OUT_SOURCE_TARGET receives the target
+# compiling the sources (the object library for LIBRARY), where compile settings belong.
 function( _cdrk_add_library_target LIB_TYPE TARGET_NAME ALIAS_NAME OUT_SOURCE_TARGET )
     #
     set( SOURCE_FILES ${ARGN} )
@@ -403,6 +435,22 @@ function( _cdrk_add_library_target LIB_TYPE TARGET_NAME ALIAS_NAME OUT_SOURCE_TA
 endfunction()
 
 
+# cdrk_module( <MODULE_NAME> <EXECUTABLE|STATIC|SHARED|LIBRARY>
+#              [SOURCES <file>...]
+#              [INCLUDE_DIRECTORY <dir>]
+#              [SOURCE_DIRECTORY <dir>]
+#              [STRICT [STRICT_ARGS <arg>...]] )
+#
+# Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
+# <namespace> is read from ${PROJECT_NAME}_NAMESPACE. The target name is returned in MODULE_TARGET_NAME.
+# EXECUTABLE:         an executable, runtime DLLs are copied next to it on Windows.
+# STATIC/SHARED:      a single library of that type.
+# LIBRARY:            both, sources compiled once; the static one is <namespace>::<MODULE_NAME>-static.
+# Libraries define <NAMESPACE>_<MODULE_NAME>_EXPORT (upper case) to mark exported symbols.
+# INCLUDE_DIRECTORY:  public headers, default ${CMAKE_CURRENT_SOURCE_DIR}/include.
+# SOURCE_DIRECTORY:   private headers, default ${CMAKE_CURRENT_SOURCE_DIR}/source.
+# STRICT:             applies strict compilation options; STRICT_ARGS are forwarded to them
+#                     (ENABLE_EXCEPTIONS <bool>, ENABLE_RTTI <bool>, extra compile options).
 function( cdrk_module MODULE_NAME MODULE_TYPE )
     #
     # 1. Parse and validate arguments.
@@ -509,6 +557,10 @@ message( STATUS "CDrake v${CDRK_VERSION} toolkit loaded." )
 # scripts/private/check_for_updates.cmake
 # ----------------------------------------
 #
+# _cdrk_check_for_updates()
+#
+# Warns if the latest CDrake on GitHub is newer than the loaded one. The remote version is
+# fetched at most once a day and cached. Disabled by setting CDRK_CHECK_FOR_UPDATES to OFF.
 function( _cdrk_check_for_updates )
     #
     if( NOT CDRK_CHECK_FOR_UPDATES )

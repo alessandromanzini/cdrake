@@ -6,6 +6,22 @@ include_guard( GLOBAL )
 include( "${CMAKE_CURRENT_LIST_DIR}/../private/target_configure_strict.cmake" )
 include( "${CMAKE_CURRENT_LIST_DIR}/../private/add_library_target.cmake" )
 
+# cdrk_module( <MODULE_NAME> <EXECUTABLE|STATIC|SHARED|LIBRARY>
+#              [SOURCES <file>...]
+#              [INCLUDE_DIRECTORY <dir>]
+#              [SOURCE_DIRECTORY <dir>]
+#              [STRICT [STRICT_ARGS <arg>...]] )
+#
+# Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
+# <namespace> is read from ${PROJECT_NAME}_NAMESPACE. The target name is returned in MODULE_TARGET_NAME.
+# EXECUTABLE:         an executable, runtime DLLs are copied next to it on Windows.
+# STATIC/SHARED:      a single library of that type.
+# LIBRARY:            both, sources compiled once; the static one is <namespace>::<MODULE_NAME>-static.
+# Libraries define <NAMESPACE>_<MODULE_NAME>_EXPORT (upper case) to mark exported symbols.
+# INCLUDE_DIRECTORY:  public headers, default ${CMAKE_CURRENT_SOURCE_DIR}/include.
+# SOURCE_DIRECTORY:   private headers, default ${CMAKE_CURRENT_SOURCE_DIR}/source.
+# STRICT:             applies strict compilation options; STRICT_ARGS are forwarded to them
+#                     (ENABLE_EXCEPTIONS <bool>, ENABLE_RTTI <bool>, extra compile options).
 function( cdrk_module MODULE_NAME MODULE_TYPE )
     #
     # 1. Parse and validate arguments.

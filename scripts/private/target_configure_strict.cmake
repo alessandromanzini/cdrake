@@ -1,5 +1,9 @@
 include_guard( GLOBAL )
 
+# _cdrk_target_configure_strict( <TARGET_NAME> [ENABLE_EXCEPTIONS <bool>] [ENABLE_RTTI <bool>] [<option>...] )
+#
+# Enables warnings as errors on TARGET_NAME and disables exceptions and RTTI unless enabled.
+# Any other argument is added as a private compile option.
 function( _cdrk_target_configure_strict TARGET_NAME )
     #
     # --- Argument parsing -----------------------------------------------

@@ -1,5 +1,8 @@
 include_guard( GLOBAL )
 
+# _cdrk_sources_disable_pedantic( [<source>...] )
+#
+# Disables pedantic warnings and precompiled headers on the given sources.
 function( _cdrk_sources_disable_pedantic )
     #
     set( SOURCES ${ARGN} )
