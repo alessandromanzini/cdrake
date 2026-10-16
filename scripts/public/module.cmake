@@ -10,7 +10,7 @@ include( "${CMAKE_CURRENT_LIST_DIR}/../private/add_library_target.cmake" )
 #              [SOURCES <file>...]
 #              [INCLUDE_DIRECTORY <dir>]
 #              [SOURCE_DIRECTORY <dir>]
-#              [STRICT [STRICT_ARGS <arg>...]] )
+#              [STRICT | STRICT_ARGS <arg>...] )
 #
 # Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
 # <namespace> is read from ${PROJECT_NAME}_NAMESPACE or defaulted to <MODULE_NAME>. The
@@ -21,8 +21,9 @@ include( "${CMAKE_CURRENT_LIST_DIR}/../private/add_library_target.cmake" )
 # Libraries define <NAMESPACE>_<MODULE_NAME>_EXPORT (upper case) to mark exported symbols.
 # INCLUDE_DIRECTORY:  public headers, default ${CMAKE_CURRENT_SOURCE_DIR}/include.
 # SOURCE_DIRECTORY:   private headers, default ${CMAKE_CURRENT_SOURCE_DIR}/source.
-# STRICT:             applies strict compilation options; STRICT_ARGS are forwarded to them
-#                     (ENABLE_EXCEPTIONS <bool>, ENABLE_RTTI <bool>, extra compile options).
+# STRICT:             applies strict compilation options with their defaults.
+# STRICT_ARGS:        applies strict compilation options with these arguments
+#                     (ENABLE_EXCEPTIONS, ENABLE_RTTI, extra compile options).
 function( cdrk_module MODULE_NAME MODULE_TYPE )
     #
     # 1. Parse and validate arguments.
@@ -34,9 +35,10 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     endif()
     #
-    if( ARG_STRICT_ARGS AND NOT ARG_STRICT )
+    # STRICT_ARGS implies STRICT, even if left empty.
+    if( DEFINED ARG_STRICT_ARGS OR "STRICT_ARGS" IN_LIST ARG_KEYWORDS_MISSING_VALUES )
         #
-        message( FATAL_ERROR "cdrk_module: STRICT_ARGS given without STRICT!" )
+        set( ARG_STRICT ON )
         #
     endif()
     #
