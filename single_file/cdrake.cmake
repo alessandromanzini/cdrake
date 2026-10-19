@@ -18,7 +18,7 @@ cmake_minimum_required( VERSION 3.29 )
 #
 set( CDRK_VERSION_MAJOR 1 )
 set( CDRK_VERSION_MINOR 3 )
-set( CDRK_VERSION_PATCH 2 )
+set( CDRK_VERSION_PATCH 3 )
 set( CDRK_VERSION "${CDRK_VERSION_MAJOR}.${CDRK_VERSION_MINOR}.${CDRK_VERSION_PATCH}" )
 #
 set( CDRK_REPOSITORY "alessandromanzini/cdrake" )
@@ -367,13 +367,15 @@ function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     #
 endfunction()
 
-# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <OUT_SOURCE_TARGET> <OUT_LINK_TARGETS> )
+# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <MACRO_TAG> <OUT_SOURCE_TARGET> <OUT_LINK_TARGETS> )
 #
 # Adds the library targets, see cdrk_module. OUT_SOURCE_TARGET receives the target compiling
 # the sources (the object library for LIBRARY), OUT_LINK_TARGETS the targets to link against.
-function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LINK_TARGETS )
+#
+# The export macro is injected in the target with the following format: <MACRO_TAG>_EXPORT
+function( _cdrk_add_library_target LIB_TYPE MACRO_TAG TARGET_NAME OUT_SOURCE_TARGET OUT_LINK_TARGETS )
     #
-    string( TOUPPER "${TARGET_NAME}_EXPORT" EXPORT_MACRO )
+    string( TOUPPER "${MACRO_TAG}_EXPORT" EXPORT_MACRO )
     string( MAKE_C_IDENTIFIER "${EXPORT_MACRO}" EXPORT_MACRO )
     #
     if( LIB_TYPE STREQUAL "STATIC" )
@@ -507,7 +509,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     elseif( MODULE_TYPE MATCHES "^(STATIC|SHARED|LIBRARY)$" )
         #
-        _cdrk_add_library_target( "${MODULE_TYPE}" "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
+        _cdrk_add_library_target( "${MODULE_TYPE}" "${MODULE_NAME}" "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
         #
     else()
         #

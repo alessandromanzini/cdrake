@@ -78,7 +78,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
         #
     elseif( MODULE_TYPE MATCHES "^(STATIC|SHARED|LIBRARY)$" )
         #
-        _cdrk_add_library_target( "${MODULE_TYPE}" "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
+        _cdrk_add_library_target( "${MODULE_TYPE}" "${MODULE_NAME}" "${TARGET_NAME}" SOURCE_TARGET LINK_TARGETS )
         #
     else()
         #

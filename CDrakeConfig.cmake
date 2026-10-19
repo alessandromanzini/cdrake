@@ -15,7 +15,7 @@ cmake_minimum_required( VERSION 3.29 )
 #
 set( CDRK_VERSION_MAJOR 1 )
 set( CDRK_VERSION_MINOR 3 )
-set( CDRK_VERSION_PATCH 2 )
+set( CDRK_VERSION_PATCH 3 )
 set( CDRK_VERSION "${CDRK_VERSION_MAJOR}.${CDRK_VERSION_MINOR}.${CDRK_VERSION_PATCH}" )
 #
 set( CDRK_REPOSITORY "alessandromanzini/cdrake" )

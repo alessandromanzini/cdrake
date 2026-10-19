@@ -47,13 +47,15 @@ function( _cdrk_target_export_api TARGET_NAME EXPORT_MACRO MODE )
     #
 endfunction()
 
-# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <OUT_SOURCE_TARGET> <OUT_LINK_TARGETS> )
+# _cdrk_add_library_target( <STATIC|SHARED|LIBRARY> <TARGET_NAME> <MACRO_TAG> <OUT_SOURCE_TARGET> <OUT_LINK_TARGETS> )
 #
 # Adds the library targets, see cdrk_module. OUT_SOURCE_TARGET receives the target compiling
 # the sources (the object library for LIBRARY), OUT_LINK_TARGETS the targets to link against.
-function( _cdrk_add_library_target LIB_TYPE TARGET_NAME OUT_SOURCE_TARGET OUT_LINK_TARGETS )
+#
+# The export macro is injected in the target with the following format: <MACRO_TAG>_EXPORT
+function( _cdrk_add_library_target LIB_TYPE MACRO_TAG TARGET_NAME OUT_SOURCE_TARGET OUT_LINK_TARGETS )
     #
-    string( TOUPPER "${TARGET_NAME}_EXPORT" EXPORT_MACRO )
+    string( TOUPPER "${MACRO_TAG}_EXPORT" EXPORT_MACRO )
     string( MAKE_C_IDENTIFIER "${EXPORT_MACRO}" EXPORT_MACRO )
     #
     if( LIB_TYPE STREQUAL "STATIC" )
