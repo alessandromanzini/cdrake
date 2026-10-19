@@ -29,6 +29,12 @@ function( cdrk_module_sources TARGET )
     # 1. Parse and validate arguments.
     cmake_parse_arguments( PARSE_ARGV 1 ARG "NO_PEDANTIC" "" "SOURCES;HEADERS;MODULES;EXCLUDE;FRAMEWORKS;IF" )
     #
+    if ( NOT TARGET "${TARGET}" )
+        #
+        message( FATAL_ERROR "cdrk_module_sources: '${TARGET}' is an invalid target!" )
+        #
+    endif( )
+    #
     if( ARG_UNPARSED_ARGUMENTS )
         #
         message( FATAL_ERROR "cdrk_module_sources: unexpected arguments '${ARG_UNPARSED_ARGUMENTS}'!" )

@@ -18,7 +18,7 @@ cmake_minimum_required( VERSION 3.29 )
 #
 set( CDRK_VERSION_MAJOR 1 )
 set( CDRK_VERSION_MINOR 3 )
-set( CDRK_VERSION_PATCH 1 )
+set( CDRK_VERSION_PATCH 2 )
 set( CDRK_VERSION "${CDRK_VERSION_MAJOR}.${CDRK_VERSION_MINOR}.${CDRK_VERSION_PATCH}" )
 #
 set( CDRK_REPOSITORY "alessandromanzini/cdrake" )
@@ -443,8 +443,8 @@ endfunction()
 # Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
 # <namespace> is read from ${PROJECT_NAME}_NAMESPACE. If no namespace is defined, the
 # target is defined as <MODULE_NAME> with no alias.
-# The complete target name is returned in <MODULE_TARGET_NAME> on the parent scope. Same
-# goes for directory paths to <MODULE_INC_DIR> and <MODULE_SRC_DIR>.
+# The complete target name is returned in <MODULE_TARGET> on the parent scope. Same goes
+# for directory paths to <MODULE_INC_DIR> and <MODULE_SRC_DIR>.
 # Sources can be added with cdrk_module_sources.
 #
 # EXECUTABLE:         an executable, runtime DLLs are copied next to it on Windows.
@@ -570,7 +570,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
                            _CDRK_INCLUDE_DIRECTORY "${ARG_INCLUDE_DIRECTORY}"
                            _CDRK_SOURCE_DIRECTORY "${ARG_SOURCE_DIRECTORY}" )
     #
-    set( MODULE_TARGET_NAME "${TARGET_NAME}" PARENT_SCOPE )
+    set( MODULE_TARGET "${TARGET_NAME}" PARENT_SCOPE )
     set( MODULE_INC_DIR "${ARG_INCLUDE_DIRECTORY}" PARENT_SCOPE )
     set( MODULE_SRC_DIR "${ARG_SOURCE_DIRECTORY}" PARENT_SCOPE )
     #
@@ -713,6 +713,12 @@ function( cdrk_module_sources TARGET )
     #
     # 1. Parse and validate arguments.
     cmake_parse_arguments( PARSE_ARGV 1 ARG "NO_PEDANTIC" "" "SOURCES;HEADERS;MODULES;EXCLUDE;FRAMEWORKS;IF" )
+    #
+    if ( NOT TARGET "${TARGET}" )
+        #
+        message( FATAL_ERROR "cdrk_module_sources: '${TARGET}' is an invalid target!" )
+        #
+    endif( )
     #
     if( ARG_UNPARSED_ARGUMENTS )
         #

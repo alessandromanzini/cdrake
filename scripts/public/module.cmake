@@ -14,8 +14,8 @@ include( "${CMAKE_CURRENT_LIST_DIR}/../private/add_library_target.cmake" )
 # Adds the target <namespace>_<MODULE_NAME> with alias <namespace>::<MODULE_NAME>, where
 # <namespace> is read from ${PROJECT_NAME}_NAMESPACE. If no namespace is defined, the
 # target is defined as <MODULE_NAME> with no alias.
-# The complete target name is returned in <MODULE_TARGET_NAME> on the parent scope. Same
-# goes for directory paths to <MODULE_INC_DIR> and <MODULE_SRC_DIR>.
+# The complete target name is returned in <MODULE_TARGET> on the parent scope. Same goes
+# for directory paths to <MODULE_INC_DIR> and <MODULE_SRC_DIR>.
 # Sources can be added with cdrk_module_sources.
 #
 # EXECUTABLE:         an executable, runtime DLLs are copied next to it on Windows.
@@ -141,7 +141,7 @@ function( cdrk_module MODULE_NAME MODULE_TYPE )
                            _CDRK_INCLUDE_DIRECTORY "${ARG_INCLUDE_DIRECTORY}"
                            _CDRK_SOURCE_DIRECTORY "${ARG_SOURCE_DIRECTORY}" )
     #
-    set( MODULE_TARGET_NAME "${TARGET_NAME}" PARENT_SCOPE )
+    set( MODULE_TARGET "${TARGET_NAME}" PARENT_SCOPE )
     set( MODULE_INC_DIR "${ARG_INCLUDE_DIRECTORY}" PARENT_SCOPE )
     set( MODULE_SRC_DIR "${ARG_SOURCE_DIRECTORY}" PARENT_SCOPE )
     #
